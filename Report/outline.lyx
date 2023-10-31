@@ -91,6 +91,15 @@
 Graph Variational neural network for fast end to end detector simulation
 \end_layout
 
+\begin_layout Author
+Dinesh PR
+\end_layout
+
+\begin_layout Standard
+towards partial fulfillment of course requirements for PH 561 (Fall 2023)
+ at the University of Alabama
+\end_layout
+
 \begin_layout Section
 Introduction and Background
 \end_layout
@@ -110,6 +119,9 @@ literal "false"
  While it trains on dataset obtained from existing Monte Carlo-based generation
  and detector simulation models, we aim to accelerate re-sampling the same
  without compromising on the accuracy and fidelity.
+ A successful implementation of the model can be used to program customized
+ FPGA-based triggers that can avoid pile-up of unnecessary background hits
+ during collision experiments at the LHC.
 \end_layout
 
 \begin_layout Subsection
@@ -319,9 +331,7 @@ The HCAL subdetector encloses the ECAL and measures the energies of hadronic
 \end_inset
 
  directions.
- The image dataset for training is created by scaling appropriately and
- concatenating hits, energy readings and labels (quark/gluon jet) from all
- 3 sub detectors.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -485,19 +495,10 @@ literal "false"
 \end_inset
 
  tend to make approximations that trade off accuracy for speed.
- This full simulation using theory-driven collision event generators and
- experimentally optimized detector simulators is referred to as end-to-end
- generation.
- In this work, we focus on the quark-gluon shower dataset for the CMS detector,
- available on the CERN open data portal
-\begin_inset CommandInset citation
-LatexCommand cite
-key "CERN_Open_data_portal"
-literal "false"
-
-\end_inset
-
- and was simulated using PYTHIA and GEANT.
+ Full simulation of collider experiments using theory-driven collision event
+ generators and experimentally optimized detector simulators is referred
+ to as end-to-end event generation.
+ 
 \begin_inset Note Note
 status open
 
@@ -690,6 +691,62 @@ where
 
  are weights of the layer (which are optimized during training) and 'agg'
  is an aggregating operation like mean or max.
+\end_layout
+
+\begin_layout Section
+Data and Pre-processing
+\end_layout
+
+\begin_layout Standard
+In this work, we focus on the quark-gluon shower dataset for the CMS detector,
+ available on the CERN open data portal
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CERN_Open_data_portal"
+literal "false"
+
+\end_inset
+
+ and was simulated using PYTHIA and GEANT.
+ Due to lack of availability of Tracker hits in CERN open data.
+ <WIP: There's a straightforward way to encode 
+\begin_inset Formula $\left(i\eta,i\phi\right)$
+\end_inset
+
+ instead of 
+\begin_inset Formula $\left(x,y\right)$
+\end_inset
+
+ coordinates of pre-processed image as done in 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "GraphVAE_simulation"
+literal "false"
+
+\end_inset
+
+- can potentially improve model performance>
+\end_layout
+
+\begin_layout Section
+Results
+\end_layout
+
+\begin_layout Standard
+<WIP: Description of training hyperparameters like optimizer, learning rate
+ schedules and regularization terms in loss function.
+ Inference speed will be plotted against input (total graph nodes) and batch
+ sizes.
+ Comparisons of reconstructed image against training image will be plotted
+ to illustrate fidelity of the model>
+\end_layout
+
+\begin_layout Section
+Conclusion
+\end_layout
+
+\begin_layout Standard
+<WIP>
 \end_layout
 
 \begin_layout Standard
