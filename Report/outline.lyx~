@@ -29,7 +29,17 @@
 \bibtex_command default
 \index_command default
 \paperfontsize default
-\use_hyperref false
+\spacing single
+\use_hyperref true
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder false
+\pdf_colorlinks false
+\pdf_backref false
+\pdf_pdfusetitle true
 \papersize default
 \use_geometry false
 \use_package amsmath 1
@@ -42,8 +52,10 @@
 \use_package stackrel 1
 \use_package stmaryrd 1
 \use_package undertilde 1
-\cite_engine basic
-\cite_engine_type default
+\cite_engine biblatex
+\cite_engine_type authoryear
+\biblatex_bibstyle numeric
+\biblatex_citestyle numeric
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
@@ -79,77 +91,415 @@
 Graph Variational neural network for fast end to end detector simulation
 \end_layout
 
-\begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-Write down a rough sketch of your outlines first and 
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
 \begin_layout Section
 Introduction and Background
 \end_layout
 
-\begin_layout Itemize
-Fast detector simulations corresponding to rare/interesting signals from
- collisions in the LHC are necessary to avoid pile up of data corresponding
- to unnecessary backgrounds.
-\end_layout
-
 \begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-Make the introduction more elementary compared to the GraphVAE paper.
- Over here, introduce LHC, the kind of dataset and our end goal.
-\end_layout
+In the current work, we build and study a generative model based on graph
+ variational autoencoders to accelerate simulations of boosted top quark
+ production in the Large Hadron Collider (LHC)
+\begin_inset CommandInset citation
+LatexCommand cite
+key "LHC"
+literal "false"
 
 \end_inset
 
- Scientific studies of physics at high energies typically involve characterizing
- the results of colliding beams of particles at relativistic speeds, which
- offer far more control and detail compared to fixed target experiments
- or astronomical observations.
+.
+ While it trains on dataset obtained from existing Monte Carlo-based generation
+ and detector simulation models, we aim to accelerate re-sampling the same
+ without compromising on the accuracy and fidelity.
 \end_layout
 
 \begin_layout Subsection
-Quantum field theory and the standard model processes
+CMS detector and collision 
+\begin_inset Quotes eld
+\end_inset
+
+images
+\begin_inset Quotes erd
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
-\begin_inset Note Note
+The CMS detector
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CMS_Exp"
+literal "false"
+
+\end_inset
+
+ in the LHC is arranged in cylindrical sections of different types of subdetecto
+rs (see fig 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:CMS_figure"
+
+\end_inset
+
+), with the central axis along the line of collision between proton beams.
+ This includes both barrel and endcap (see figure) sections of each subdetector.
+ We look at 3 particular subdetectors as relevant to this study- the inner
+ tracking system (Tracker), the electromagnetic calorimeter (ECAL) and the
+ hadronic calorimeter (HCAL)
+\begin_inset CommandInset citation
+LatexCommand cite
+key "e2e_classification"
+literal "false"
+
+\end_inset
+
+.
+ 
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename Figures/cms_detector.png
+	scale 3
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:CMS_figure"
+
+\end_inset
+
+Schematics of the CMS detector at LHC, CERN.
+ Source: 
+\begin_inset Flex URL
 status open
 
 \begin_layout Plain Layout
-Motivate and describe the quantum field theoretical framework of HEP and
- the involvement of expensive computations to predict cross sections
+
+https://cms.cern/detector
 \end_layout
 
 \end_inset
 
-The behavior of fundamental particles in the smallest scales are described
- using quantum field theory (QFT), where their behavior is described using
- eigenstates of a field theory.
- While free fields admit trivial eigenstates, appearance of coupling terms
- in the Lagrangian typically require eigenstates in the form of a perturbation
- series.
- Computing scattering amplitudes to arbitrary accuracy require computation
- of higher order terms of higher complexities and typically require Monte
- Carlo-based numerical methods [].
- Each such term/process in the series can be illustrated in terms of Feynman
- diagrams- while most such processes are well/understood, exceedingly small
- fractions of them involve exotic particles or new physics within as well
- as beyond what's known as the Standard model (SM) of particles.
- 
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Tracker is the innermost series of finely segmented silicon wafers that
+ (non-destructively) detect positional tracks left by particles formed from
+ a collision beam, deciphering practically nothing about their energies.
+ The 
+\begin_inset Quotes eld
+\end_inset
+
+pixels
+\begin_inset Quotes erd
+\end_inset
+
+ in the Tracker are labelled using 
+\begin_inset Formula $\left(z,\phi\right)$
+\end_inset
+
+ and 
+\begin_inset Formula $\left(\rho,\phi\right)$
+\end_inset
+
+ for the barrel and endcap sections respectively- where 
+\begin_inset Formula $z$
+\end_inset
+
+ denotes length along the axis, 
+\begin_inset Formula $\rho$
+\end_inset
+
+ denotes the perpendicular radius and 
+\begin_inset Formula $\phi$
+\end_inset
+
+ denotes the azimuthal angle.
+\end_layout
+
+\begin_layout Standard
+Surrounding the Tracker is the ECAL subdetector which captures the incoming
+ photons and electrons, and measures their energies using scintillating
+ lead tungstate crystals.
+ In the barrel section, it is segmented by pseudorapidity 
+\begin_inset Formula $\left(i\eta_{EB}\right)$
+\end_inset
+
+ and azimuthal angle 
+\begin_inset Formula $\left(i\phi_{EB}\right)$
+\end_inset
+
+ and spans within 
+\begin_inset Formula $\left|\eta\right|<1.479$
+\end_inset
+
+ making it a 
+\begin_inset Formula $170\times360$
+\end_inset
+
+ grid of 
+\begin_inset Quotes eld
+\end_inset
+
+pixels
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The endcap is labelled using 
+\begin_inset Formula $\left(iX,iY\right)$
+\end_inset
+
+ as a Cartesian grid of pixels arranged in a circle.
+ Psudorapidity is an alternative to the polar angle 
+\begin_inset Formula $\left(\theta\right)$
+\end_inset
+
+ frequently used in spherical coordinates and they're related by:
+\begin_inset Formula 
+\[
+\eta=-\ln\left[\tan\frac{\theta}{2}\right]
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The HCAL subdetector encloses the ECAL and measures the energies of hadronic
+ particles (mostly charged pions and kaons) using scintillating brass towers.
+ The barrel section encloses the pseudorapidity range 
+\begin_inset Formula $\left|\eta\right|<3$
+\end_inset
+
+.
+ The pixels in the barrel section of HCAL produce an image that's more coarsely
+ segmented with roughly 
+\begin_inset Formula $1$
+\end_inset
+
+ HCAL pixel per 
+\begin_inset Formula $5$
+\end_inset
+
+ ECAL pixels along both the 
+\begin_inset Formula $i\phi$
+\end_inset
+
+ and 
+\begin_inset Formula $i\eta$
+\end_inset
+
+ directions.
+ The image dataset for training is created by scaling appropriately and
+ concatenating hits, energy readings and labels (quark/gluon jet) from all
+ 3 sub detectors.
+\end_layout
+
+\begin_layout Subsection
+Event generation for LHC
+\end_layout
+
+\begin_layout Standard
+Quantum field theory
+\begin_inset CommandInset citation
+LatexCommand cite
+key "zee_qft,weinberg_QFT,peskin_QFT"
+literal "false"
+
+\end_inset
+
+ is the mathematical framework based on which theoretical as well as numerical
+ computations of physical quantities observed in high energy experiments
+ are performed.
+ In particular, the values of Green's functions or S matrices determine
+ the various scattering 
+\emph on
+cross sections
+\emph default
+ for the final states of particles observed in different detectors.
+ The simulation pipeline can be divided into several steps
+\begin_inset CommandInset citation
+LatexCommand cite
+key "event_generation_hep_review"
+literal "false"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Paragraph
+Hard scattering
+\end_layout
+
+\begin_layout Standard
+The 
+\emph on
+hard scattering
+\emph default
+ component probes the smallest length scales around the collision center.
+ The cross sections are usually determined using ab inito (first principle),
+ perturbative QFT calculations at the highest order of accuracy feasible
+ in terms of the coupling constants.
+ Terms of the perturbation series can be represented visually using Feynman
+ diagrams
+\begin_inset CommandInset citation
+LatexCommand cite
+key "feynman_papers"
+literal "false"
+
+\end_inset
+
+ and their values are often plagued by problems with IR divergences in loop
+ integrals which often cancel analytically with tree-level counterparts.
+ If analytic solutions are not available, Monte Carlo-based simulations
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Hard_scattering_MC_1,Hard_scattering_MC_2,Hard_scattering_MC_3"
+literal "false"
+
+\end_inset
+
+ are used for which there are ever-increasing quests for improvements in
+ efficiency and numerical stability.
+\end_layout
+
+\begin_layout Paragraph
+Secondary interactions and decays
+\end_layout
+
+\begin_layout Standard
+Since detectors are present at much larger distances from the center, there
+ can be additional collisions and decays beyond the hard scattering which
+ need to simulated accurately.
+ Factorization theorems
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Factorization_1,Factorization_2"
+literal "false"
+
+\end_inset
+
+ give rise to correlations between the momenta of partonic (quarks/gluons)
+ currents of different flavours, which are encoded semi-classically as integrals
+ of parton distribution functions (PDF).
+ Their time-evolution is modelled using Monte Carlo-based algorithms like
+ parton showers 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "parton_showers"
+literal "false"
+
+\end_inset
+
+and dipole showers
+\begin_inset CommandInset citation
+LatexCommand cite
+key "dipole_showers"
+literal "false"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Paragraph
+Numerical libraries and open simulated datasets
+\end_layout
+
+\begin_layout Standard
+Many generic software libraries that simulate parts of the event generation
+ chain we briefly summarized are available.
+ Most popular general-purpose packages available for the same include SHERPA
+\begin_inset CommandInset citation
+LatexCommand cite
+key "SHERPA"
+literal "false"
+
+\end_inset
+
+, HERWIG
+\begin_inset CommandInset citation
+LatexCommand cite
+key "HERWIG"
+literal "false"
+
+\end_inset
+
+ and PYTHIA
+\begin_inset CommandInset citation
+LatexCommand cite
+key "PYTHIA"
+literal "false"
+
+\end_inset
+
+.
+ They're run in combination with software that simulate the behavior of
+ particular detectors (in say, CMS) like GEANT
+\begin_inset CommandInset citation
+LatexCommand cite
+key "GEANT4"
+literal "false"
+
+\end_inset
+
+.
+ While the Monte Carlo-based generators are highly accurate, they often
+ scale poorly with the collision energy, luminosity and detector count.
+ Faster detector simulation libraries like DELPHES
+\begin_inset CommandInset citation
+LatexCommand cite
+key "DELPHES"
+literal "false"
+
+\end_inset
+
+ tend to make approximations that trade off accuracy for speed.
+ This full simulation using theory-driven collision event generators and
+ experimentally optimized detector simulators is referred to as end-to-end
+ generation.
+ In this work, we focus on the quark-gluon shower dataset for the CMS detector,
+ available on the CERN open data portal
+\begin_inset CommandInset citation
+LatexCommand cite
+key "CERN_Open_data_portal"
+literal "false"
+
+\end_inset
+
+ and was simulated using PYTHIA and GEANT.
 \begin_inset Note Note
-status collapsed
+status open
 
 \begin_layout Plain Layout
 Find as many primary research articles for the concepts outlined here, as
@@ -158,35 +508,188 @@ Find as many primary research articles for the concepts outlined here, as
 
 \end_inset
 
- Such processes are the goal of study for large scale experiments in high
- energy physics like the Large Hadron collider.
- They are also 
+ 
 \end_layout
 
 \begin_layout Subsection
-End to end simulation of collisions with detector effects
+Generative ML and Graph VAE
 \end_layout
 
 \begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-Explain how standard Monte Carlo based generators like Pythia accurately
- sample particle collisions from 1st principles.
- Combining with detector simulators like Geant4 accurately reproduce expected
- particle hits on the detector.
- However, this is too slow and cause pile up for higher energies and luminositie
-s.
-\end_layout
+Generative networks
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Generative_NN_survey"
+literal "false"
 
 \end_inset
 
+ are machine learning tools used to sample from a learned data distribution
+ from the training set.
+ While Monte Carlo generators asymptotically (in the limit of infinite samples)
+ converge to the actual distribution for averaged quantities, they can suffer
+ from large autocorrelations between successive samples and poor accuracies
+ for non-averaged quantities for practically finite number of samples
+\begin_inset CommandInset citation
+LatexCommand cite
+key "metropolis_mcmc"
+literal "false"
 
+\end_inset
+
+.
+ On the other hand, most generative ML models sample with no autocorrelations
+ but their asymptotic closeness to the target distribution depends on the
+ model architecture, training parameters, loss function and the quality
+ of training data.
+ Most popular classes of generative networks include variational autoencoders
+\begin_inset CommandInset citation
+LatexCommand cite
+key "VAEs"
+literal "false"
+
+\end_inset
+
+ (VAE), generative adversarial networks
+\begin_inset CommandInset citation
+LatexCommand cite
+key "GANs"
+literal "false"
+
+\end_inset
+
+ (GAN) and normalizing flows (NF)
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Normalizing_flows"
+literal "false"
+
+\end_inset
+
+.
+ VAEs and GANs generally offer highly expressive models and have already
+ been used in many high energy physics applications including end to end
+ event generation
+\begin_inset CommandInset citation
+LatexCommand cite
+key "ML_LHC_events_review"
+literal "false"
+
+\end_inset
+
+.
+ NFs are known to be less expressive but allow us to explicitly compute
+ likelihoods of different samples and can be inverted for reverse simulations,
+ which have been exploited in many HEP applications.
 \end_layout
 
-\begin_layout Subsection
-Generative machine learning
+\begin_layout Paragraph
+Variational autoencoders
+\end_layout
+
+\begin_layout Standard
+VAEs use neural networks to 
+\emph on
+encode
+\emph default
+ or compress high dimensional input data to lower dimensional latent space
+ which is also the parameter space for an easily sampled probability distributio
+n (like Gaussian) and these samples are then 
+\emph on
+decoded
+\emph default
+ by other neural networks back to the original input space.
+ They are typically trained to minimize a distance between the input and
+ the (decoded) output data, like mean squared error (MSE), along with a
+ prior likelihood term into an evidence lower bound (ELBO) estimator.
+ In our work, we use graph-based neural networks for encoders and decoders
+ in a VAE, an idea which has already been explored
+\begin_inset CommandInset citation
+LatexCommand cite
+key "GraphVAE_simulation"
+literal "false"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Paragraph
+Graph convolution and pooling operations
+\end_layout
+
+\begin_layout Standard
+In the geometric deep learning framework
+\begin_inset CommandInset citation
+LatexCommand cite
+key "bronstein2017geometric"
+literal "false"
+
+\end_inset
+
+, we tend to use operations that preserve the structure and symmetries of
+ the input data.
+ In the case of graph data, we'd like to preserve the neighborhood of each
+ node and require that the output be invariant to permutations within the
+ neighborhoods.
+ Spectral convolutions
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Spectral_GNN"
+literal "false"
+
+\end_inset
+
+ were initially developed as compatible operations on graph data but they
+ tend to scale poorly with the number of nodes and edges.
+ Message passing layers like GCN 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Semi-supervised_GCN"
+literal "false"
+
+\end_inset
+
+and SAGE
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Graph_SAGE"
+literal "false"
+
+\end_inset
+
+ were developed to compute convolutions in polynomial time on the size of
+ input data.
+ We convert the sparse detector image by taking the non-zero pixels as nodes
+ and putting edges between 
+\emph on
+k 
+\emph default
+nearest neighbors (knn) of every node.
+ We use SAGE convolution layers, which is ideal for aggregating information
+ from the neighborhood of every node when the edge count 
+\begin_inset Formula $\left(\sim k\right)$
+\end_inset
+
+ is very small.
+ The operation is mathematically described using
+\begin_inset Formula 
+\[
+\bm{x}'_{i}=\bm{W}_{1}\bm{x}_{i}+\bm{W}_{2}.\text{agg}_{j\in\mathcal{N}(i)}\bm{x}_{j}
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula $\bm{W}_{1}$
+\end_inset
+
+ and 
+\begin_inset Formula $\bm{W}_{2}$
+\end_inset
+
+ are weights of the layer (which are optimized during training) and 'agg'
+ is an aggregating operation like mean or max.
 \end_layout
 
 \begin_layout Standard
@@ -194,7 +697,6 @@ Generative machine learning
 LatexCommand bibtex
 btprint "btPrintCited"
 bibfiles "ref"
-options "plain"
 
 \end_inset
 
