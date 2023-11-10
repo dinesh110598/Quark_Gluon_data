@@ -28,8 +28,11 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     for ep in range(epochs):
         for (x, m0, pt, y) in data_loader:
             opt.zero_grad()
-            loss = loss_fn(net, x)
+            loss = loss_fn(net, x[0])
             loss.backward()
             
-            optimizer.step()
+            opt.step()
     dataset.close()
+# %%
+# net = GraphVAE(3, 32, 3)
+# train_loop(net, 2, 32)

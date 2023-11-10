@@ -1,10 +1,13 @@
 # %%
 import h5py as h5
+import numpy as np
 import torch
 import torch_geometric
 import torch.nn as nn
 import torch.nn.functional as F
+
 from torch_geometric import nn as gnn
+from torch_geometric.utils import to_dense_batch, to_dense_adj
 # %%
 def graph_list(X: torch.Tensor) -> list:
     """
@@ -72,9 +75,5 @@ def preprocess(x):
     
     X, mask = to_dense_batch(G, lengs, fill_value=0, max_num_nodes=1000)
     A = to_dense_adj(E, lengs, max_num_nodes=1000) # (batch, 1000, 1000)
-    return X, A 
-# %%
-dataset = Train_Dataset(batch_size=50)
-data_loader = torch.utils.data.DataLoader(dataset)
-# %%
+    return X, A
 # %%
