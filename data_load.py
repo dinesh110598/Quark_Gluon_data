@@ -63,6 +63,18 @@ class Train_Dataset(torch.utils.data.Dataset):
     
     def close(self):
         self.f.close()
+        
+def get_train_dataset(L=100_000):
+    """
+    Loads dataset to RAM. Slow to initialize.
+    """
+    f = h5.File("quark-gluon_data-set_n139306.hdf5")
+    x, y = f['X_jets'][:L], f['y'][:L]
+    x, y = torch.from_numpy(x), torch.from_numpy(y)
+    (ind_0,) = torch.nonzero(y==0, as_tuple=True)
+    x = x[ind_0]
+    f.close()
+    return torch.utils.data.TensorDataset(x)
 
 def preprocess(x):
     graphs = graph_list(x)
