@@ -40,7 +40,6 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
             loss.backward()
             
             opt.step()
-    dataset.close()
 # %%
 # net = GraphVAE(3, 32, 8)
 # train_loop(net, 1, 50)
