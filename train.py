@@ -46,24 +46,25 @@ def loss_infer(net, x):
     Inference loss function
     """
     # Graph nodes and edges
-    X, A, mask = preprocess(x)
+    X, A, counts = preprocess(x)
     # Reconstructed nodes and edges
     Y, A2, mu, logvar, L1, L2 = net(X, A)
     
     # Convert back to image
-    ecal = reconstruct_img(Y, mask)
+    ecal = reconstruct_img(Y, counts)
     
     mse = torch.nn.MSELoss()
     
-    return mse(X, Y), ecal, mask
+    return mse(X, Y), ecal, counts
     
 # %%
-net = GraphVAE(3, 32, 8)
-net.load_state_dict(torch.load("Saves/L_50k.pth"))
-dataset = get_train_dataset(10_000)
-dataloader = torch.utils.data.DataLoader(dataset, 200, True)
-for (x,) in dataloader:
-    img1 = x[:, :, :, 1]
-    L, img2, mask = loss_infer(net, x)
-    break
+# net = GraphVAE(3, 32, 8)
+# net.load_state_dict(torch.load("Saves/L_50k.pth"))
+# dataset = get_train_dataset(10_000)
+# dataloader = torch.utils.data.DataLoader(dataset, 200, True)
+# for (x,) in dataloader:
+#     img1 = x[:, :, :, 1]
+#     with torch.no_grad():
+#         L, img2, counts = loss_infer(net, x)
+#     break
 # %%

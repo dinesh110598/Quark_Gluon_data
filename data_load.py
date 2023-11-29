@@ -87,19 +87,20 @@ def preprocess(x):
     
     X, mask = to_dense_batch(G, lengs, fill_value=0, max_num_nodes=1000)
     A = to_dense_adj(E, lengs, max_num_nodes=1000) # (batch, 1000, 1000)
-    return X, A, mask
+    return X, A, counts
 
-def reconstruct_img(Y, mask):
+def reconstruct_img(Y, counts):
     xhit, yhit = Y[:, :, 0], Y[:, :, 1]
-    val = Y[:, :, 2]/50
+    val = Y[:, :, 2]/50.
+    
     xhit = (xhit % 125).int()
     yhit = (yhit % 125).int()
     
     ecal = torch.zeros((Y.shape[0], 125, 125))
     for j in range(Y.shape[0]):
         # Add fancy/optimized indexing later
-        for i in range(1000):
-            ecal[j, xhit[j, i], yhit[j, i]] = mask[j, i]*val[j, i]
+        for i in range(counts[j]):
+            ecal[j, xhit[j, i], yhit[j, i]] += val[j, i]
     
     return ecal
 # %%
