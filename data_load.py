@@ -22,7 +22,8 @@ def graph_list(X: torch.Tensor) -> list:
         
         E = ecal[xhit, yhit]*50
         # Node features are positions and energies of the hits
-        node_ft = torch.stack((xhit.float(), yhit.float(), E), dim=1)
+        node_ft = torch.stack((xhit.float()/125, 
+                               yhit.float()/125, E), dim=1)
         # Edges are b/w k-nearest neighbors of every node
         edge_index = gnn.knn_graph(pos, k=6, loop=True)
         graphs.append(torch_geometric.data.Data(
@@ -90,7 +91,7 @@ def preprocess(x):
     return X, A, counts
 
 def reconstruct_img(Y, counts):
-    xhit, yhit = Y[:, :, 0], Y[:, :, 1]
+    xhit, yhit = Y[:, :, 0]*125, Y[:, :, 1]*125
     val = Y[:, :, 2]/50.
     
     xhit = (xhit % 125).int()

@@ -23,8 +23,8 @@ def loss_fn(net, x):
     Y, A2, mu, logvar, L1, L2 = net(X, A)
     mse = torch.nn.MSELoss()
     # KL-divergence b/w latent distribution and N(0,1)
-    KL_div = 0.5*(logvar + (1 + mu**2)/logvar.exp())
-    return mse(X, Y) + L1 + L2 + KL_div.mean()
+    KL_div = 0.5*(logvar + (1 + mu**2)/logvar.exp()) - 0.5
+    return 10*mse(X, Y) + L1 + L2 + KL_div.mean()
 
 def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     dataset = get_train_dataset()
@@ -32,7 +32,7 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     opt = torch.optim.Adam(net.parameters(), lr)
 
     for ep in range(epochs):
-        for (x,) in data_loader:
+        for (step, (x,)) in enumerate(data_loader):
             opt.zero_grad()
             loss = loss_fn(net, x)
             with torch.no_grad():
@@ -58,13 +58,13 @@ def loss_infer(net, x):
     return mse(X, Y), ecal, counts
     
 # %%
-# net = GraphVAE(3, 32, 8)
-# net.load_state_dict(torch.load("Saves/L_50k.pth"))
-# dataset = get_train_dataset(10_000)
-# dataloader = torch.utils.data.DataLoader(dataset, 200, True)
-# for (x,) in dataloader:
-#     img1 = x[:, :, :, 1]
-#     with torch.no_grad():
-#         L, img2, counts = loss_infer(net, x)
-#     break
+net = GraphVAE(3, 32, 8)
+net.load_state_dict(torch.load("Saves/L_50k.pth"))
+dataset = get_train_dataset(10_000)
+dataloader = torch.utils.data.DataLoader(dataset, 200, True)
+for (x,) in dataloader:
+    img1 = x[:, :, :, 1]
+    with torch.no_grad():
+        L, img2, counts = loss_infer(net, x)
+    break
 # %%
