@@ -35,7 +35,7 @@ def graph_list(X: torch.Tensor) -> list:
 def node_counter(samples):
     inds=[]
     for k in samples:
-        inds.append(k['x'].shape[0])
+        inds.append(np.minimum(k['x'].shape[0], 1000))
     return inds
 
 def assigner(counts):
@@ -111,9 +111,8 @@ def preprocess(x):
     # X.shape = (batch, 1000, 3)
     A = to_dense_adj(E, lengs, max_num_nodes=1000) # (batch, 1000, 1000)
     
-    indx = torch.argsort(X[:, :, 2], descending=True) 
-    # Sort according to energies
-    X, A = sort_by_energy(X, A)
+    # # Sort according to energies
+    # X, A = sort_by_energy(X, A)
     
     return X, A, counts
 

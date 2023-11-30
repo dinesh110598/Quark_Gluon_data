@@ -32,7 +32,7 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     opt = torch.optim.Adam(net.parameters(), lr)
 
     for ep in range(epochs):
-        for (step, (x,)) in enumerate(data_loader):
+        for step, (x,) in enumerate(data_loader):
             opt.zero_grad()
             loss = loss_fn(net, x)
             with torch.no_grad():
@@ -61,13 +61,13 @@ def loss_infer(net, x):
     return mse(X, Y), ecal, counts
     
 # %%
-net = GraphVAE(3, 32, 8)
-net.load_state_dict(torch.load("Saves/L_50k.pth"))
-dataset = get_train_dataset(10_000)
-dataloader = torch.utils.data.DataLoader(dataset, 200, True)
-for (x,) in dataloader:
-    img1 = x[:, :, :, 1]
-    with torch.no_grad():
-        L, img2, counts = loss_infer(net, x)
-    break
+# net = GraphVAE(3, 32, 8)
+# net.load_state_dict(torch.load("Saves/L_50k_2.pth"))
+# dataset = get_train_dataset(10_000)
+# dataloader = torch.utils.data.DataLoader(dataset, 200, True)
+# for (x,) in dataloader:
+#     img1 = x[:, :, :, 1]
+#     with torch.no_grad():
+#         L, img2, counts = loss_infer(net, x)
+#     break
 # %%
