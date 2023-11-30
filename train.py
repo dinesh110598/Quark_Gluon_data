@@ -23,8 +23,8 @@ def loss_fn(net, x):
     Y, A2, mu, logvar, L1, L2 = net(X, A)
     mse = torch.nn.MSELoss()
     # KL-divergence b/w latent distribution and N(0,1)
-    KL_div = 0.5*(logvar + (1 + mu**2)/logvar.exp()) - 0.5
-    return 10*mse(X, Y) + L1 + L2 + KL_div.mean()
+    # KL_div = 0.5*(logvar + (1 + mu**2)/logvar.exp()) - 0.5
+    return 10*mse(X, Y) + L1 + L2 # + KL_div.mean()
 
 def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     dataset = get_train_dataset()
@@ -39,6 +39,9 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
                 print(loss)
             loss.backward()
             
+            if (step+1)%100 == 0:
+                torch.save(net.state_dict(), 
+                           "Saves/Checkpoints/s_{}.pth".format(step+1))
             opt.step()
             
 def loss_infer(net, x):

@@ -78,6 +78,27 @@ def get_train_dataset(L=100_000):
     return torch.utils.data.TensorDataset(x)
 
 def preprocess(x):
+    def sort_by_energy(X, A):
+        # Argsort energies alone
+        indx = torch.argsort(X[:, :, 2], descending=True)
+        
+        batch, nodes = X.shape[0], X.shape[1]
+        # Get dim=0,1 flattened version of indx
+        kappa = nodes*torch.arange(batch).unsqueeze(1)
+        indx2 = torch.flatten(kappa + indx)
+        # flatten((batch, 1) + (batch, nodes))
+        # Sort first 2 dims by flattening and reshape back
+        X = torch.flatten(X, 0, 1)[indx2, :].reshape(X.shape)
+        
+        # Get indices to sort dim=1,2 of A
+        indx3 = ((kappa+indx)*torch.arange(nodes)).unsqueeze(2)
+        # (batch, nodes, 1)
+        indx3 = indx3 + indx.unsqueeze(1)
+        # (batch, nodes, 1) + (batch, 1, nodes)
+        # Flatten A, sort, and get it back to shape
+        A = torch.flatten(A)[indx3].reshape(A.shape)
+        return X, A
+    
     graphs = graph_list(x)
     counts = node_counter(graphs)
     lengs = torch.LongTensor(np.hstack(assigner(counts)))
@@ -87,7 +108,13 @@ def preprocess(x):
     E = compress.edge_index.clone()
     
     X, mask = to_dense_batch(G, lengs, fill_value=0, max_num_nodes=1000)
+    # X.shape = (batch, 1000, 3)
     A = to_dense_adj(E, lengs, max_num_nodes=1000) # (batch, 1000, 1000)
+    
+    indx = torch.argsort(X[:, :, 2], descending=True) 
+    # Sort according to energies
+    X, A = sort_by_energy(X, A)
+    
     return X, A, counts
 
 def reconstruct_img(Y, counts):
