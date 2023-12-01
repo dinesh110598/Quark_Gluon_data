@@ -20,11 +20,10 @@ def loss_fn(net, x):
     # Graph nodes and edges
     X, A, mask = preprocess(x)
     # Reconstructed nodes and edges
-    Y, A2, mu, logvar, L1, L2 = net(X, A)
+    Y, A2, L1, L2 = net(X, A)
     mse = torch.nn.MSELoss()
-    # KL-divergence b/w latent distribution and N(0,1)
-    # KL_div = 0.5*(logvar + (1 + mu**2)/logvar.exp()) - 0.5
-    return 10*mse(X, Y) + L1 + L2 # + KL_div.mean()
+    
+    return mse(X, Y) + L1 + L2
 
 def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     dataset = get_train_dataset()
@@ -51,7 +50,7 @@ def loss_infer(net, x):
     # Graph nodes and edges
     X, A, counts = preprocess(x)
     # Reconstructed nodes and edges
-    Y, A2, mu, logvar, L1, L2 = net(X, A)
+    Y, A2, L1, L2 = net(X, A)
     
     # Convert back to image
     ecal = reconstruct_img(Y, counts)
