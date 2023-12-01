@@ -21,9 +21,11 @@ def loss_fn(net, x):
     X, A, mask = preprocess(x)
     # Reconstructed nodes and edges
     Y, A2, L1, L2 = net(X, A)
-    mse = torch.nn.MSELoss()
     
-    return mse(X, Y) + L1 + L2
+    mse = torch.nn.MSELoss()(X, Y)
+    reg = L1 + L2
+    
+    return mse + reg, mse, reg
 
 def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     dataset = get_train_dataset()
@@ -33,12 +35,12 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     for ep in range(epochs):
         for step, (x,) in enumerate(data_loader):
             opt.zero_grad()
-            loss = loss_fn(net, x)
+            loss, mse, reg = loss_fn(net, x)
             with torch.no_grad():
-                print(step, loss)
+                print(step, mse.item(), reg.item())
             loss.backward()
             
-            if (step+1)%100 == 0:
+            if (step+1)%20 == 0:
                 torch.save(net.state_dict(), 
                            "Saves/Checkpoints/s_{}.pth".format(step+1))
             opt.step()
@@ -60,9 +62,9 @@ def loss_infer(net, x):
     return mse(X, Y), ecal, counts
     
 # %%
-# net = GraphVAE(3, 32, 8)
-# net.load_state_dict(torch.load("Saves/L_50k_2.pth"))
-# dataset = get_train_dataset(10_000)
+# net = GraphVAE()
+# net.load_state_dict(torch.load("Saves/Checkpoints/s_160.pth"))
+# dataset = get_train_dataset(400)
 # dataloader = torch.utils.data.DataLoader(dataset, 200, True)
 # for (x,) in dataloader:
 #     img1 = x[:, :, :, 1]

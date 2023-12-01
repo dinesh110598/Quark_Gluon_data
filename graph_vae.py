@@ -54,15 +54,12 @@ class GraphVAE(nn.Module):
         ])
         
         self.out_hits = nn.Sequential(
-            nn.Linear(hidden, hidden),
-            nn.LeakyReLU(),
             nn.Linear(hidden, 2),
             nn.Sigmoid()
         )
         self.out_ener = nn.Sequential(
-            nn.Linear(hidden, hidden),
-            nn.LeakyReLU(),
-            nn.Linear(hidden, 1)
+            nn.Linear(hidden, 1),
+            nn.ReLU()
         )
         
     def upsample(self, X, A, S):
@@ -102,7 +99,7 @@ class GraphVAE(nn.Module):
                 Z = F.leaky_relu(Z)
                 A = F.sigmoid(A)
                 
-        Z1, Z2 = torch.split(Z, 2, -1)
+        Z1, Z2 = torch.tensor_split(Z, 2, -1)
         X_hits = self.out_hits(Z1)
         X_ener = self.out_ener(Z2)
         return torch.cat((X_hits, X_ener), -1), A

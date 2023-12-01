@@ -20,7 +20,12 @@ def graph_list(X: torch.Tensor) -> list:
         xhit, yhit = torch.nonzero(ecal, as_tuple=True)
         pos = torch.stack((xhit.float(), yhit.float()), dim=1)
         
-        E = ecal[xhit, yhit]*50
+        E = ecal[xhit, yhit][:1000]*50
+        # Sort according to energies
+        E, args = torch.sort(E, -1, True)
+        xhit = xhit[args]
+        yhit = yhit[args]
+        
         # Node features are positions and energies of the hits
         node_ft = torch.stack((xhit.float()/125, 
                                yhit.float()/125, E), dim=1)
