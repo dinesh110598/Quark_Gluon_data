@@ -36,7 +36,7 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
             opt.zero_grad()
             loss = loss_fn(net, x)
             with torch.no_grad():
-                print(loss)
+                print(step, loss)
             loss.backward()
             
             if (step+1)%100 == 0:
