@@ -6,5 +6,4 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --output=./Data/log.txt
 
-conda activate torch-gpu
-python3 hpc_run.py
+/home/dpr/miniconda3/envs/torch-geo/bin/python3 hpc_run.py
