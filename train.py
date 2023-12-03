@@ -37,20 +37,25 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     opt = torch.optim.Adam(net.parameters(), lr)
 
     for ep in range(epochs):
-        ep_loss = 0.
+        ep_loss, ep_E_mse, ep_hit_mse = 0., 0., 0.
         for i, (x,) in enumerate(data_loader):
             opt.zero_grad()
-            loss, mse_hit, mse_ener = loss_fn(net, x)
+            loss, hit_mse, E_mse = loss_fn(net, x)
             loss.backward()
             
             ep_loss += float(loss.item())
+            ep_E_mse += float(E_mse.item())
+            ep_hit_mse += float(hit_mse.item())
             
             opt.step()
             
         torch.save(net.state_dict(), 
                    "Saves/Checkpoints/ep_{}.pth".format(ep+1))
             
-        print("Epoch : {}".format(ep+1), "Loss: {}".format(ep_loss/250.))
+        print("Epoch : {}".format(ep+1), 
+              "Loss: {:.4f}".format(ep_loss/250.),
+              "E mse: {:.4f}".format(ep_E_mse/250.), 
+              "Hit mse: {:.4f}".format(ep_hit_mse/250.))
             
 def loss_infer(net, x):
     """
