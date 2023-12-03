@@ -18,14 +18,18 @@ def loss_fn(net, x):
     # x.shape = (batch, 125, 125, 3)
     
     # Graph nodes and edges
-    X, A, mask = preprocess(x)
+    X, A, mask, _ = preprocess(x)
     # Reconstructed nodes and edges
-    Y, A2, L1, L2 = net(X, A)
+    Y, A2, mu, logvar, L1, L2 = net(X, A, mask)
     
-    mse = torch.nn.MSELoss()(X, Y)
-    reg = L1 + L2
+    mse_hit = torch.nn.MSELoss()(X[:, :, :2], Y[:, :, :2])
+    mse_ener = torch.nn.MSELoss()(X[:, :, 2], Y[:, :, 2])
+    mse = mse_hit + mse_ener
+    KL_div = -0.5*torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+    graph_reg = L1 + L2
+    # wt_reg = sum([p.abs().sum() for p in net.parameters()])
     
-    return mse + reg, mse, reg
+    return mse + KL_div + graph_reg, mse_hit, mse_ener
 
 def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     dataset = get_train_dataset()
@@ -33,26 +37,29 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3):
     opt = torch.optim.Adam(net.parameters(), lr)
 
     for ep in range(epochs):
-        for step, (x,) in enumerate(data_loader):
+        ep_loss = 0.
+        for i, (x,) in enumerate(data_loader):
             opt.zero_grad()
-            loss, mse, reg = loss_fn(net, x)
-            with torch.no_grad():
-                print(step, mse.item(), reg.item())
+            loss, mse_hit, mse_ener = loss_fn(net, x)
             loss.backward()
             
-            if (step+1)%20 == 0:
-                torch.save(net.state_dict(), 
-                           "Saves/Checkpoints/s_{}.pth".format(step+1))
+            ep_loss += float(loss.item())
+            
             opt.step()
+            
+        torch.save(net.state_dict(), 
+                   "Saves/Checkpoints/ep_{}.pth".format(ep+1))
+            
+        print("Epoch : {}".format(ep+1), "Loss: {}".format(ep_loss/250.))
             
 def loss_infer(net, x):
     """
     Inference loss function
     """
     # Graph nodes and edges
-    X, A, counts = preprocess(x)
+    X, A, mask, counts = preprocess(x)
     # Reconstructed nodes and edges
-    Y, A2, L1, L2 = net(X, A)
+    Y, A2, mu, logvar, L1, L2 = net(X, A, mask)
     
     # Convert back to image
     ecal = reconstruct_img(Y, counts)
@@ -63,7 +70,7 @@ def loss_infer(net, x):
     
 # %%
 # net = GraphVAE()
-# net.load_state_dict(torch.load("Saves/Checkpoints/s_160.pth"))
+# net.load_state_dict(torch.load("Saves/Checkpoints/ep_15.pth"))
 # dataset = get_train_dataset(400)
 # dataloader = torch.utils.data.DataLoader(dataset, 200, True)
 # for (x,) in dataloader:

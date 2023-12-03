@@ -27,8 +27,8 @@ def graph_list(X: torch.Tensor) -> list:
         yhit = yhit[args]
         
         # Node features are positions and energies of the hits
-        node_ft = torch.stack((xhit.float()/125, 
-                               yhit.float()/125, E), dim=1)
+        node_ft = torch.stack((xhit.float(), 
+                               yhit.float(), E), dim=1)
         # Edges are b/w k-nearest neighbors of every node
         edge_index = gnn.knn_graph(pos, k=6, loop=True)
         graphs.append(torch_geometric.data.Data(
@@ -116,13 +116,10 @@ def preprocess(x):
     # X.shape = (batch, 1000, 3)
     A = to_dense_adj(E, lengs, max_num_nodes=1000) # (batch, 1000, 1000)
     
-    # # Sort according to energies
-    # X, A = sort_by_energy(X, A)
-    
-    return X, A, counts
+    return X, A, mask, counts
 
 def reconstruct_img(Y, counts):
-    xhit, yhit = Y[:, :, 0]*125, Y[:, :, 1]*125
+    xhit, yhit = Y[:, :, 0], Y[:, :, 1]
     val = Y[:, :, 2]/50.
     
     xhit = (xhit % 125).int()
@@ -132,7 +129,7 @@ def reconstruct_img(Y, counts):
     for j in range(Y.shape[0]):
         # Add fancy/optimized indexing later
         for i in range(counts[j]):
-            ecal[j, xhit[j, i], yhit[j, i]] += val[j, i]
+            ecal[j, xhit[j, i], yhit[j, i]] += 0.1# val[j, i]
     
     return ecal
 # %%
