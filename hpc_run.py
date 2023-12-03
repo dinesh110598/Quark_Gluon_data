@@ -13,7 +13,7 @@ from train import train_loop, loss_infer
 from data_load import *
 
 net = GraphVAE()
-net.load_state_dict(torch.load("Saves/Checkpoints/ep_15.pth"))
+net.load_state_dict(torch.load("Saves/L_50k_ep_15.pth"))
 train_loop(net, 30, 200)
 
 torch.save(net.state_dict(), "Saves/L_50k_ep_45.pth")
