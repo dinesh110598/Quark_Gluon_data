@@ -17,7 +17,7 @@ class GraphVAE(nn.Module):
     def __init__(self, hidden_channels=32, latent_dim=8):
         super().__init__()
         # Default values
-        # max_nodes = 1000
+        # max_nodes = 300
         # depth = 6
         # latent_dim = 16
         
@@ -35,13 +35,13 @@ class GraphVAE(nn.Module):
             nn.Dropout(0.3)
         ])
         self.batch_norm = nn.ModuleList([
-            nn.BatchNorm1d(1000),
-            nn.BatchNorm1d(250),
-            nn.BatchNorm1d(50)
+            nn.BatchNorm1d(300),
+            nn.BatchNorm1d(75),
+            nn.BatchNorm1d(15)
         ])
         self.pool = nn.ModuleList([
-            MinCut_Pool(hidden, 250),
-            MinCut_Pool(hidden//2, 50)
+            MinCut_Pool(hidden, 75),
+            MinCut_Pool(hidden//2, 15)
         ])
         
         self.tr_z = nn.Linear(hidden//4, latent_dim)
