@@ -50,9 +50,8 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3,
             ep_hit_mse += float(hit_mse.item())
             
             opt.step()
-            break
             
-        torch.save(net.state_dict(), 
+        torch.save(net.to("cpu").state_dict(), 
                    "Saves/Checkpoints/ep_{}.pth".format(ep+1))
             
         print("Epoch : {}".format(ep+1), 

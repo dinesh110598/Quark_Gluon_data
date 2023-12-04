@@ -12,8 +12,14 @@ from graph_vae import GraphVAE
 from train import train_loop, loss_infer
 from data_load import *
 
-net = GraphVAE()
-net.load_state_dict(torch.load("Saves/L_50k_ep_15.pth"))
-train_loop(net, 30, 200)
+if torch.cuda.is_available():
+    device = torch.device("cuda:0")
+else:
+    device = torch.device("cpu")
 
-torch.save(net.state_dict(), "Saves/L_50k_ep_45.pth")
+net = GraphVAE()
+net.load_state_dict(torch.load("Saves/ep_25.pth"))
+net = net.to(device)
+
+train_loop(net, 30, 200, 1e-3, device)
+torch.save(net.to("cpu").state_dict(), "Saves/hpc_ep_30.pth")

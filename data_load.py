@@ -70,7 +70,7 @@ class Train_Dataset(torch.utils.data.Dataset):
     def close(self):
         self.f.close()
         
-def get_train_dataset(L=2_000):
+def get_train_dataset(L=100_000):
     """
     Loads dataset to RAM. Slow to initialize.
     """
