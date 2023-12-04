@@ -70,7 +70,7 @@ class Train_Dataset(torch.utils.data.Dataset):
     def close(self):
         self.f.close()
         
-def get_train_dataset(L=100_000):
+def get_train_dataset(L=2_000):
     """
     Loads dataset to RAM. Slow to initialize.
     """
@@ -82,7 +82,7 @@ def get_train_dataset(L=100_000):
     f.close()
     return torch.utils.data.TensorDataset(x)
 
-def preprocess(x):
+def preprocess(x, device):
     def sort_by_energy(X, A):
         # Argsort energies alone
         indx = torch.argsort(X[:, :, 2], descending=True)
@@ -106,7 +106,7 @@ def preprocess(x):
     
     graphs = graph_list(x)
     counts = node_counter(graphs)
-    lengs = torch.LongTensor(np.hstack(assigner(counts)))
+    lengs = torch.LongTensor(np.hstack(assigner(counts))).to(device)
 
     compress = torch_geometric.data.Batch.from_data_list(graphs)
     G = compress.x.clone() # All nodes of all graphs cat together
