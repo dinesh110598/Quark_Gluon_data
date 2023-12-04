@@ -24,7 +24,7 @@ def loss_fn(net, x):
     
     mse_hit = torch.nn.MSELoss()(X[:, :, :2], Y[:, :, :2])
     mse_ener = torch.nn.MSELoss()(X[:, :, 2], Y[:, :, 2])
-    mse = mse_hit + mse_ener
+    mse = mse_hit + 50*mse_ener
     KL_div = -0.5*torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
     graph_reg = L1 + L2
     # wt_reg = sum([p.abs().sum() for p in net.parameters()])
