@@ -81,14 +81,15 @@ def loss_fn2(net, X, A, mask):
     
     mse_hit = torch.nn.MSELoss()(X[:, :, :2], Y[:, :, :2])
     mse_ener = torch.nn.MSELoss()(X[:, :, 2], Y[:, :, 2])
-    mse = mse_hit + mse_ener
+    mse_chan = torch.nn.MSELoss()(X[:, :, 3], Y[:, :, 3])
+    mse = mse_hit + mse_ener + mse_chan
     KL_div = -0.5*torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
     graph_reg = L1 + L2
     # wt_reg = sum([p.abs().sum() for p in net.parameters()])
     
     return (mse + KL_div)/64. + graph_reg, mse_hit, mse_ener
 
-def train_loop2(net: GraphVAE, epochs, batch_size=250, lr=1e-3, 
+def train_loop2(net: GraphVAE, epochs, batch_size=64, lr=1e-3, 
                 device=torch.device("cpu")):
     dataset = Train_Dataset(batch_size)
     data_loader = torch.utils.data.DataLoader(dataset)
@@ -96,7 +97,7 @@ def train_loop2(net: GraphVAE, epochs, batch_size=250, lr=1e-3,
 
     for ep in range(epochs):
         net = net.to(device)
-        ep_loss, ep_E_mse, ep_hit_mse = 0., 0., 0.
+        ep_loss, ep_E_mse, ep_hit_mse, count = 0., 0., 0., 0.
         for (X, A, mask) in data_loader:
             X = X[0].to(device)
             A = A[0].to(device)
@@ -109,6 +110,7 @@ def train_loop2(net: GraphVAE, epochs, batch_size=250, lr=1e-3,
             ep_loss += float(loss.item())
             ep_E_mse += float(E_mse.item())
             ep_hit_mse += float(hit_mse.item())
+            count += 1
             
             opt.step()
             
@@ -116,9 +118,9 @@ def train_loop2(net: GraphVAE, epochs, batch_size=250, lr=1e-3,
                    "Saves/Checkpoints/ep_{}.pth".format(ep+1))
             
         print("Epoch : {}".format(ep+1), 
-              "Loss: {:.4f}".format(ep_loss/200.),
-              "E mse: {:.4f}".format(ep_E_mse/200.), 
-              "Hit mse: {:.4f}".format(ep_hit_mse/200.))
+              "Loss: {:.5f}".format(ep_loss/count),
+              "E mse: {:.5f}".format(ep_E_mse/count), 
+              "Hit mse: {:.5f}".format(ep_hit_mse/count))
     
     dataset.close()
     
