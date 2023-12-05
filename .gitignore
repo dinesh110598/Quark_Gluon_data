@@ -4,3 +4,5 @@ __pycache__/data_load.cpython-311.pyc
 __pycache__/train.cpython-311.pyc
 __pycache__/graph_vae.cpython-311.pyc
 Saves/Checkpoints
+quark_ecal_graph.h5
+quark_jets_ecal.h5

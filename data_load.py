@@ -16,7 +16,7 @@ def graph_list(X: torch.Tensor) -> list:
     graphs = []
     
     for i in range(X.shape[0]):
-        ecal = X[i, :, :, 1]
+        ecal = X[i] #[i, :, :, 1]
         xhit, yhit = torch.nonzero(ecal, as_tuple=True)
         # pos = torch.stack((xhit.float(), yhit.float()), dim=1)
         
@@ -53,19 +53,18 @@ def assigner(counts):
 # %%        
 class Train_Dataset(torch.utils.data.Dataset):
     def __init__(self, batch_size):
-        self.f = h5.File("quark-gluon_data-set_n139306.hdf5")
+        self.f = h5.File("quark_ecal_graph.h5")
         self.batch = batch_size
         
     def __len__(self):
-        return len(self.f['y'])//self.batch
+        return 50_000//self.batch
     
     def __getitem__(self, i: int):
         i1 = i*self.batch
         i2 = (i+1)*self.batch
-        return (torch.from_numpy(self.f['X_jets'][i1:i2]), 
-                torch.from_numpy(self.f['m0'][i1:i2]), 
-                torch.from_numpy(self.f['pt'][i1:i2]), 
-                torch.from_numpy(self.f['y'][i1:i2]))
+        return (torch.from_numpy(self.f['X'][i1:i2]), 
+                torch.from_numpy(self.f['A'][i1:i2]), 
+                torch.from_numpy(self.f['mask'][i1:i2]))
     
     def close(self):
         self.f.close()
