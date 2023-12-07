@@ -24,7 +24,7 @@ def loss_fn(net, x, device):
     
     mse_hit = torch.nn.MSELoss()(X[:, :, :2], Y[:, :, :2])
     mse_ener = torch.nn.MSELoss()(X[:, :, 2], Y[:, :, 2])
-    mse = mse_hit + 50*mse_ener
+    mse = mse_hit + mse_ener
     KL_div = -0.5*torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
     graph_reg = L1 + L2
     # wt_reg = sum([p.abs().sum() for p in net.parameters()])
@@ -58,58 +58,46 @@ def train_loop(net: GraphVAE, epochs, batch_size, lr=1e-3,
               "Loss: {:.4f}".format(ep_loss/250.),
               "E mse: {:.4f}".format(ep_E_mse/250.), 
               "Hit mse: {:.4f}".format(ep_hit_mse/250.))
-            
-def loss_infer(net, x):
-    """
-    Inference loss function
-    """
-    # Graph nodes and edges
-    X, A, mask, counts = preprocess(x)
-    # Reconstructed nodes and edges
-    Y, A2, mu, logvar, L1, L2 = net(X, A, mask)
-    
-    # Convert back to image
-    ecal = reconstruct_img(Y, counts)
-    
-    mse = torch.nn.MSELoss()
-    
-    return mse(X, Y), ecal, counts
 # %%
 def loss_fn2(net, X, A, mask):
     # Reconstructed nodes and edges
     Y, A2, mu, logvar, L1, L2 = net(X, A, mask)
+    X = X * mask.unsqueeze(-1)
+    Y = Y * mask.unsqueeze(-1)
     
     mse_hit = torch.nn.MSELoss()(X[:, :, :2], Y[:, :, :2])
     mse_ener = torch.nn.MSELoss()(X[:, :, 2], Y[:, :, 2])
-    mse_chan = torch.nn.MSELoss()(X[:, :, 3], Y[:, :, 3])
-    mse = mse_hit + mse_ener + mse_chan
+    # mse_chan = torch.nn.MSELoss()(X[:, :, 3], Y[:, :, 3])
+    mse = mse_hit + mse_ener # + mse_chan
     KL_div = -0.5*torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
     graph_reg = L1 + L2
+    
     # wt_reg = sum([p.abs().sum() for p in net.parameters()])
     
-    return (mse + KL_div)/64. + graph_reg, mse_hit, mse_ener
+    return (mse + KL_div) + graph_reg, mse_hit, mse_ener, L2
 
 def train_loop2(net: GraphVAE, epochs, batch_size=64, lr=1e-3, 
                 device=torch.device("cpu")):
-    dataset = Train_Dataset(batch_size)
-    data_loader = torch.utils.data.DataLoader(dataset)
+    dataset = get_train_dataset()
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size, True)
     opt = torch.optim.Adam(net.parameters(), lr)
 
     for ep in range(epochs):
         net = net.to(device)
-        ep_loss, ep_E_mse, ep_hit_mse, count = 0., 0., 0., 0.
-        for (X, A, mask) in data_loader:
-            X = X[0].to(device)
-            A = A[0].to(device)
-            mask = mask[0].to(device)
+        ep_loss, ep_E_mse, ep_hit_mse, ep_L2, count = 0., 0., 0., 0., 0.
+        for (X, NL, mask) in data_loader:
+            X = X.to(device)
+            mask = mask.to(device)
+            A = eval_A(NL.to(device).int())*mask.unsqueeze(2)
             
             opt.zero_grad()
-            loss, hit_mse, E_mse = loss_fn2(net, X, A, mask)
+            loss, hit_mse, E_mse, L2 = loss_fn2(net, X, A, mask)
             loss.backward()
             
             ep_loss += float(loss.item())
             ep_E_mse += float(E_mse.item())
             ep_hit_mse += float(hit_mse.item())
+            ep_L2 += float(L2.item())
             count += 1
             
             opt.step()
@@ -120,23 +108,8 @@ def train_loop2(net: GraphVAE, epochs, batch_size=64, lr=1e-3,
         print("Epoch : {}".format(ep+1), 
               "Loss: {:.5f}".format(ep_loss/count),
               "E mse: {:.5f}".format(ep_E_mse/count), 
-              "Hit mse: {:.5f}".format(ep_hit_mse/count))
-    
-    dataset.close()
-    
-def loss_infer2(net, X, A, mask):
-    """
-    Inference loss function
-    """
-    # Reconstructed nodes and edges
-    Y, A2, mu, logvar, L1, L2 = net(X, A, mask)
-    counts = torch.sum(mask, 1)
-    # Convert back to image
-    ecal = reconstruct_img(Y, counts)
-    
-    mse = torch.nn.MSELoss()
-    
-    return mse(X, Y), ecal, counts
+              "Hit mse: {:.5f}".format(ep_hit_mse/count),
+              "L2: {:.5f}".format(ep_L2/count))
 # %%
 # net = GraphVAE()
 # net.load_state_dict(torch.load("Saves/Checkpoints/ep_15.pth"))
