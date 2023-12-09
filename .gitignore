@@ -9,3 +9,6 @@ quark_ecal_graph.h5
 quark_jets_ecal.h5
 quark_3chan_graph.h5
 quark_ecal_graph_compressed.h5
+gluon_ecal_graph_compressed.h5
+gluon_jets_ecal.h5
+quark_ecal_graph_normalized.h5

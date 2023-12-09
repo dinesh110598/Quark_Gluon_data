@@ -20,7 +20,7 @@ def graph_list(X: torch.Tensor) -> list:
         xhit, yhit = torch.nonzero(ecal, as_tuple=True)
         # pos = torch.stack((xhit.float(), yhit.float()), dim=1)
         
-        E = ecal[xhit, yhit]*50
+        E = ecal[xhit, yhit]
         # Sort according to energies
         E, args = torch.sort(E, -1, True)
         xhit = xhit[args]
@@ -30,7 +30,7 @@ def graph_list(X: torch.Tensor) -> list:
         node_ft = torch.stack((xhit.float(), 
                                yhit.float(), E), dim=1)[:400]
         # Edges are b/w k-nearest neighbors of every node
-        edge_index = gnn.knn_graph(node_ft[:, :2], k=6, loop=True)
+        edge_index = gnn.knn_graph(node_ft[:, :2], k=6, loop=False)
         graphs.append(torch_geometric.data.Data(
             x=node_ft, edge_index=edge_index))
         
@@ -134,6 +134,17 @@ def get_train_dataset(L=50_000):
     return torch.utils.data.TensorDataset(torch.from_numpy(X), 
                                           torch.from_numpy(NL), 
                                           torch.from_numpy(mask))
+    
+def get_train_dataset2(L=50_000):
+    """
+    Loads dataset to RAM. Slow to initialize.
+    """
+    f = h5.File("gluon_ecal_graph_compressed.h5")
+    X, NL, mask = f['X'][:L], f['NL'][:L], f['mask'][:L]
+    f.close()
+    return torch.utils.data.TensorDataset(torch.from_numpy(X), 
+                                          torch.from_numpy(NL), 
+                                          torch.from_numpy(mask))
 
 def eval_A(NL):
     A = torch.zeros([NL.shape[0], NL.shape[1], NL.shape[1]],
@@ -174,19 +185,4 @@ def preprocess(x, device):
     A = to_dense_adj(E, lengs, max_num_nodes=400) # (batch, 400, 400)
     
     return X, A, mask, counts
-
-# def reconstruct_img(Y, counts):
-#     xhit, yhit = Y[:, :, 0], Y[:, :, 1]
-#     val = Y[:, :, 2]/50.
-    
-#     xhit = (xhit % 125).int()
-#     yhit = (yhit % 125).int()
-    
-#     ecal = torch.zeros((Y.shape[0], 125, 125))
-#     for j in range(Y.shape[0]):
-#         # Add fancy/optimized indexing later
-#         for i in range(counts[j]):
-#             ecal[j, xhit[j, i], yhit[j, i]] += 0.1# val[j, i]
-    
-#     return ecal
 # %%

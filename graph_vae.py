@@ -4,6 +4,55 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric import nn as gnn
 
+def _rank3_trace(x):
+    return torch.einsum('ijj->i', x)
+
+
+def _rank3_diag(x):
+    eye = torch.eye(x.size(1)).type_as(x)
+    out = eye * x.unsqueeze(2).expand(x.size(0), x.size(1), x.size(1))
+
+    return out
+
+def dense_mincut_pool(x, adj, s):
+
+    x = x.unsqueeze(0) if x.dim() == 2 else x
+    adj = adj.unsqueeze(0) if adj.dim() == 2 else adj
+    s = s.unsqueeze(0) if s.dim() == 2 else s
+
+    k = s.size(-1)
+
+    out = torch.matmul(s.transpose(1, 2), x)
+    out_adj = torch.matmul(torch.matmul(s.transpose(1, 2), adj), s)
+    
+    # MinCut regularization.
+    mincut_num = _rank3_trace(out_adj)
+    d_flat = torch.einsum('ijk->ij', adj)
+    d = _rank3_diag(d_flat)
+    mincut_den = _rank3_trace(
+        torch.matmul(torch.matmul(s.transpose(1, 2), d), s))
+    mincut_loss = -(mincut_num / mincut_den)
+    mincut_loss = torch.mean(mincut_loss)
+
+    # Orthogonality regularization.
+    ss = torch.matmul(s.transpose(1, 2), s)
+    i_s = torch.eye(k).type_as(ss)
+    ortho_loss = torch.norm(
+        ss / torch.norm(ss, dim=(-1, -2), keepdim=True) -
+        i_s / torch.norm(i_s), dim=(-1, -2))
+    ortho_loss = torch.mean(ortho_loss)
+
+    EPS = 1e-15
+
+    # Fix and normalize coarsened adjacency matrix.
+    ind = torch.arange(k, device=out_adj.device)
+    out_adj[:, ind, ind] = 0
+    # Degree normalization
+    d_inv_sqrt = 1/(torch.sum(out_adj, -1) + EPS).sqrt()
+    out_adj = d_inv_sqrt.unsqueeze(-1) * out_adj * d_inv_sqrt.unsqueeze(-2)
+
+    return out, out_adj, mincut_loss, ortho_loss
+
 class MinCut_Pool(nn.Module):
     def __init__(self, in_channels, n_clusters):
         super().__init__()
@@ -11,10 +60,14 @@ class MinCut_Pool(nn.Module):
         
     def forward(self, X, A, mask=None):
         S = self.linear(X)
+        # Processing S directly is useful for GraphVAE
+        S = torch.softmax(S, -1)
         if mask is not None:
             mask = mask.view(X.shape[0], X.shape[1], 1)
-            X, S = X * mask, S * mask
-        return (S,) + gnn.dense_mincut_pool(X, A, S)
+            X = X * mask
+            S = S * mask
+        
+        return (S,) + dense_mincut_pool(X, A, S)
     
 class GraphVAE(nn.Module):
     def __init__(self, max_nodes=1000, in_channels=4, 
@@ -71,6 +124,7 @@ class GraphVAE(nn.Module):
             if i<2:
                 X = self.drop[i](X)
                 S, X, A, mc, on = self.pool[i](X, A, mask if i==0 else None)
+                
                 pool_S += (S,)
                 mincut_loss += mc
                 ortho_loss += on

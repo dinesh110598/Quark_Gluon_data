@@ -246,6 +246,7 @@ Cross section of the CMS detector
 \begin_layout Frame
 \begin_inset Graphics
 	filename Figures/cms_detector.png
+	scale 50
 
 \end_inset
 
@@ -410,7 +411,7 @@ General purpose libraries- PYTHIA, SHERPA
 status open
 
 \begin_layout Plain Layout
-Detector effects
+Detector effects and ML models
 \end_layout
 
 \end_inset
@@ -430,7 +431,12 @@ The entire simulation pipeline can take days to run on supercomputers, for
 \end_layout
 
 \begin_layout Itemize
-Non ML alternatives to GEANT4 (DELPHES) tradeoff precision for speed
+Non ML alternatives to GEANT4 (like DELPHES) tradeoff precision for speed
+\end_layout
+
+\begin_layout Itemize
+ML models fit precise data to well-behaved functions- similar to variational
+ inference of energy eigenstates in quantum systems
 \end_layout
 
 \end_deeper
@@ -446,7 +452,7 @@ Non ML alternatives to GEANT4 (DELPHES) tradeoff precision for speed
 status open
 
 \begin_layout Plain Layout
-Why machine learning?
+Generative ML for end to end simulation
 \end_layout
 
 \end_inset
@@ -456,23 +462,209 @@ Why machine learning?
 
 \begin_deeper
 \begin_layout Itemize
-Simulations produce too much detail/info about the system
+Particle hit images are inherently probabilistic- so ML models approximate
+ probability distributions on the data
 \end_layout
 
 \begin_layout Itemize
-They take up precious disk space
+Dominant Generative ML paradigms- VAE, GAN, NF
 \end_layout
 
 \begin_layout Itemize
-Our detectors are imprecise to scrutinize all of them
+Popular implementations use convolution layers to generate pixel by pixel
 \end_layout
 
 \begin_layout Itemize
-ML models can be trained to filter out details, but still us tell something
- about the system
+Downside- detector hits are highly sparse which limit applicability of convoluti
+ons
 \end_layout
 
 \end_deeper
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Frame
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Graphics
+	filename Figures/here_we_go_again.jpg
+	scale 25
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Frame
+
+\end_layout
+
+\begin_deeper
+\begin_layout FrameTitle
+Sample detector image
+\end_layout
+
+\end_deeper
+\begin_layout Frame
+\begin_inset Graphics
+	filename Figures/Barrel_and_endcap.png
+	scale 25
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Graph modeling and message passing convolutions
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Number of non-zero pixels << Total number of pixels
+\end_layout
+
+\begin_layout Itemize
+We model non-zero hits alone, and their positions
+\end_layout
+
+\begin_layout Itemize
+Assume each hit depends on nearest neighbor hits
+\end_layout
+
+\begin_layout Itemize
+Graph message passing implements precisely this
+\end_layout
+
+\begin_layout Itemize
+Output invariant of order of nodes or their neighbors- similar to translation
+ invariance in CNNS
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+Some initial results
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Quark jet
+\end_layout
+
+\end_deeper
+\begin_layout Frame
+\begin_inset Graphics
+	filename Figures/Quark_reconstructed.pdf
+	scale 60
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Frame
+\begin_inset Argument 4
+status open
+
+\begin_layout Plain Layout
+An anomaly
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Frame
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Gluon jet
+\end_layout
+
+\end_deeper
+\begin_layout Frame
+\begin_inset Graphics
+	filename Figures/Gluon_reconstructed.pdf
+	scale 60
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
 \begin_inset Separator plain
 \end_inset
@@ -490,6 +682,43 @@ status open
 
 \end_inset
 
+
+\end_layout
+
+\begin_layout Frame
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+while questions:
+\end_layout
+
+\begin_layout Standard
+	attempt_to_answer()
+\end_layout
+
+\begin_layout Standard
+print(
+\begin_inset Quotes eld
+\end_inset
+
+Thank you and peace out!
+\begin_inset Quotes erd
+\end_inset
+
+)
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 
 \end_layout
 
