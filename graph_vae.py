@@ -56,10 +56,15 @@ def dense_mincut_pool(x, adj, s):
 class MinCut_Pool(nn.Module):
     def __init__(self, in_channels, n_clusters):
         super().__init__()
-        self.linear = nn.Linear(in_channels, n_clusters)
+        # self.linear = nn.Linear(in_channels, n_clusters)
+        self.mlp = nn.Sequential(
+            nn.Linear(in_channels, 32),
+            nn.ReLU(),
+            nn.Linear(32, n_clusters)
+        )
         
     def forward(self, X, A, mask=None):
-        S = self.linear(X)
+        S = self.mlp(X)
         # Processing S directly is useful for GraphVAE
         S = torch.softmax(S, -1)
         if mask is not None:
@@ -79,9 +84,9 @@ class GraphVAE(nn.Module):
         self.latent_dim = latent_dim
         
         self.sage = nn.ModuleList([
-            gnn.DenseSAGEConv(in_channels, 16, normalize=True),
-            gnn.DenseSAGEConv(16, 64, normalize=True),
-            gnn.DenseSAGEConv(64, 64, normalize=True)
+            gnn.DenseSAGEConv(in_channels, 16, normalize=False),
+            gnn.DenseSAGEConv(16, 64, normalize=False),
+            gnn.DenseSAGEConv(64, 64, normalize=False)
         ])
         self.drop = nn.ModuleList([
             nn.Dropout(0.5),
@@ -108,7 +113,6 @@ class GraphVAE(nn.Module):
         ])
         
     def upsample(self, X, A, S):
-        S = F.softmax(S, 2)
         X = torch.bmm(S, X)
         A = torch.bmm(S, torch.bmm(A, S.permute((0,2,1))))
         return X, A
@@ -119,7 +123,7 @@ class GraphVAE(nn.Module):
         ortho_loss = 0.
         
         for i in range(3):
-            X = F.relu(self.sage[i](X, A))
+            X = F.relu(self.sage[i](X, A, mask if i==0 else None))
             X = self.batch_norm[i](X)
             if i<2:
                 X = self.drop[i](X)

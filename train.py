@@ -74,7 +74,7 @@ def loss_fn2(net, X, A, mask):
     
     # wt_reg = sum([p.abs().sum() for p in net.parameters()])
     
-    return (mse + KL_div) + graph_reg, mse_hit, mse_ener, L2
+    return mse + KL_div + 0.1*graph_reg, mse_hit, mse_ener, L2
 
 def train_loop2(net: GraphVAE, epochs, batch_size=64, lr=1e-3, 
                 device=torch.device("cpu")):

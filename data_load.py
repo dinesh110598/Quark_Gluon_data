@@ -128,7 +128,7 @@ def get_train_dataset(L=50_000):
     """
     Loads dataset to RAM. Slow to initialize.
     """
-    f = h5.File("quark_ecal_graph_compressed.h5")
+    f = h5.File("quark_ecal_graph_normalized.h5")
     X, NL, mask = f['X'][:L], f['NL'][:L], f['mask'][:L]
     f.close()
     return torch.utils.data.TensorDataset(torch.from_numpy(X), 
@@ -139,7 +139,7 @@ def get_train_dataset2(L=50_000):
     """
     Loads dataset to RAM. Slow to initialize.
     """
-    f = h5.File("gluon_ecal_graph_compressed.h5")
+    f = h5.File("gluon_ecal_graph_normalized.h5")
     X, NL, mask = f['X'][:L], f['NL'][:L], f['mask'][:L]
     f.close()
     return torch.utils.data.TensorDataset(torch.from_numpy(X), 
