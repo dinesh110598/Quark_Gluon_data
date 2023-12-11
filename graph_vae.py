@@ -4,6 +4,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric import nn as gnn
 
+def deg_norm(adj):
+    EPS = 1e-15
+    d_inv_sqrt = 1/(torch.sum(adj, -1) + EPS).sqrt()
+    return d_inv_sqrt.unsqueeze(-1) * adj * d_inv_sqrt.unsqueeze(-2)
+
 def _rank3_trace(x):
     return torch.einsum('ijj->i', x)
 
@@ -48,8 +53,7 @@ def dense_mincut_pool(x, adj, s):
     ind = torch.arange(k, device=out_adj.device)
     out_adj[:, ind, ind] = 0
     # Degree normalization
-    d_inv_sqrt = 1/(torch.sum(out_adj, -1) + EPS).sqrt()
-    out_adj = d_inv_sqrt.unsqueeze(-1) * out_adj * d_inv_sqrt.unsqueeze(-2)
+    out_adj = deg_norm(out_adj)
 
     return out, out_adj, mincut_loss, ortho_loss
 
@@ -76,7 +80,7 @@ class MinCut_Pool(nn.Module):
     
 class GraphVAE(nn.Module):
     def __init__(self, max_nodes=1000, in_channels=4, 
-                 hidden_channels=32, latent_dim=16):
+                 hidden_channels=32, latent_dim=32):
         super().__init__()
         assert max_nodes%20 == 0
         
@@ -88,6 +92,10 @@ class GraphVAE(nn.Module):
             gnn.DenseSAGEConv(16, 64, normalize=False),
             gnn.DenseSAGEConv(64, 64, normalize=False)
         ])
+        # self.lin = nn.ModuleList([
+        #     nn.Linear(16, 16),
+        #     nn.Linear(64, 64)
+        # ])
         self.drop = nn.ModuleList([
             nn.Dropout(0.5),
             nn.Dropout(0.4),
@@ -103,14 +111,24 @@ class GraphVAE(nn.Module):
             MinCut_Pool(64, max_nodes//20)
         ])
         
-        self.tr_z = nn.Linear(64, 2*latent_dim)
-        self.tr_rev = nn.Linear(latent_dim, 64)
+        self.tr_z = nn.Sequential(
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 2*latent_dim))
+        self.tr_rev = nn.Sequential(
+            nn.Linear(latent_dim, 32),
+            nn.ReLU(),
+            nn.Linear(32, 64))
         
         self.revsage = nn.ModuleList([
             gnn.DenseSAGEConv(16, in_channels, normalize=False),
             gnn.DenseSAGEConv(64, 16, normalize=False),
             gnn.DenseSAGEConv(64, 64, normalize=False)
         ])
+        # self.rev_lin = nn.ModuleList([
+        #     nn.Linear(16, 16),
+        #     nn.Linear(64, 64)
+        # ])
         
     def upsample(self, X, A, S):
         X = torch.bmm(S, X)
@@ -124,7 +142,10 @@ class GraphVAE(nn.Module):
         
         for i in range(3):
             X = F.relu(self.sage[i](X, A, mask if i==0 else None))
+            # if i<2:
+            #     X = F.relu(self.lin[i](X))
             X = self.batch_norm[i](X)
+            
             if i<2:
                 X = self.drop[i](X)
                 S, X, A, mc, on = self.pool[i](X, A, mask if i==0 else None)
@@ -149,7 +170,8 @@ class GraphVAE(nn.Module):
                 # Need to check if upsample really works
                 Z, A = self.upsample(Z, A, pool_S[i-1])
                 Z = F.leaky_relu(Z)
-                A = F.sigmoid(A)
+                A = deg_norm(A)
+                # Z = F.relu(self.rev_lin[i-1](Z))
                 
         return Z, A
     
