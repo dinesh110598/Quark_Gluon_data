@@ -65,7 +65,20 @@ def loss_fn2(net, X, A, mask):
     X = X * mask.unsqueeze(-1)
     Y = Y * mask.unsqueeze(-1)
     
-    mse_hit = torch.nn.MSELoss()(X[:, :, :2], Y[:, :, :2])
+    # Make xhits compatible with periodic boundary
+    with torch.no_grad():
+        X_xhit = X[:, :, 0]
+        Y_xhit = Y[:, :, 0]
+        flag1 = (X_xhit - Y_xhit).abs() > 0.5
+        flag2 = X_xhit < 0.5
+        
+        X_xhit[torch.logical_and(flag1, flag2)] += 1.
+        X_xhit[torch.logical_and(flag1, torch.logical_not(flag2))] -= 1.
+    
+    mse_xhit = torch.nn.MSELoss()(X_xhit, Y[:, :, 0])
+    mse_yhit = torch.nn.MSELoss()(X[:, :, 1], Y[:, :, 1])
+    mse_hit = mse_xhit + mse_yhit
+    
     mse_ener = torch.nn.MSELoss()(X[:, :, 2], Y[:, :, 2])
     # mse_chan = torch.nn.MSELoss()(X[:, :, 3], Y[:, :, 3])
     mse = mse_hit + mse_ener # + mse_chan

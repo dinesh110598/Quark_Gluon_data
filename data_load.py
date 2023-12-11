@@ -154,6 +154,19 @@ def eval_A(NL):
       torch.arange(A.shape[1]).view(1, -1, 1), NL] = 1/6
     return A
 
+def encode_angle(X):
+    x_hits = X[:, :, :1]
+    phi = x_hits*2*torch.pi
+    sin_phi = (torch.sin(phi) + 1)/2
+    cos_phi = (torch.cos(phi) + 1)/2
+    return torch.cat([sin_phi, cos_phi, X[:, :, 1:]], -1)
+
+def decode_angle(X):
+    sin_phi = X[:, :, :1]
+    cos_phi = X[:, :, 1:2]
+    x_hits = torch.atan2(sin_phi, cos_phi)/torch.pi
+    return torch.cat([x_hits, X[:, :, 2:]], -1)
+
 # def preprocess(x, device):
 #     graphs = graph_list(x)
 #     counts = node_counter(graphs)

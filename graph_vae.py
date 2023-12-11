@@ -172,7 +172,6 @@ class GraphVAE(nn.Module):
                 Z = F.leaky_relu(Z)
                 A = deg_norm(A)
                 # Z = F.relu(self.rev_lin[i-1](Z))
-                
         return Z, A
     
     def sample_z(self, mu, logvar):
