@@ -335,7 +335,7 @@ The HCAL subdetector encloses the ECAL and measures the energies of hadronic
 \end_layout
 
 \begin_layout Subsection
-Event generation for LHC
+Event generation for the Large Hadrom Collider
 \end_layout
 
 \begin_layout Standard
@@ -513,7 +513,7 @@ Find as many primary research articles for the concepts outlined here, as
 \end_layout
 
 \begin_layout Subsection
-Generative ML and Graph VAE
+Generative machine learning and Graph variational autoencoders
 \end_layout
 
 \begin_layout Standard
@@ -672,7 +672,7 @@ nearest neighbors (knn) of every node.
 \begin_inset Formula $\left(\sim k\right)$
 \end_inset
 
- is very small.
+is very small.
  The operation is mathematically described using
 \begin_inset Formula 
 \[
@@ -707,25 +707,54 @@ literal "false"
 
 \end_inset
 
- and was simulated using PYTHIA and GEANT.
- Due to lack of availability of Tracker hits in CERN open data.
- <WIP: There's a straightforward way to encode 
-\begin_inset Formula $\left(i\eta,i\phi\right)$
+ where the event generation of stable particle arriving at the detectors
+ were done using PYTHIA.
+ GEANT4 is used for detector simulation, digitization, image generation
+ and reconstruction.
+ It contains 
+\begin_inset Formula $125\times125$
 \end_inset
 
- instead of 
-\begin_inset Formula $\left(x,y\right)$
+ images corresponding to the Tracker, ECAL and HCAL subdetector, labelled
+ 
+\begin_inset Formula $0$
 \end_inset
 
- coordinates of pre-processed image as done in 
-\begin_inset CommandInset citation
-LatexCommand cite
-key "GraphVAE_simulation"
-literal "false"
+ for quark jet and 
+\begin_inset Formula $1$
+\end_inset
+
+ for gluon jet responses.
+ Out of roughly 130K images (equally split between quark and gluon jets),
+ we train a GraphVAE on 50K of the quark jet ECAL images alone, for simplicity
+ as well as benchmarking the model against corresponding images of gluon
+ jets- investigating the utility of GraphVAE for detecting anomalies in
+ input data.
+ To convert the images to 
+\emph on
+graph
+\emph default
+ format, we pool all the hits with energies greater that 
+\begin_inset Formula $10^{-3}$
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+An upper bound of 400 hits was chosen, sorted according to energy in descending
+ order
+\end_layout
 
 \end_inset
 
-- can potentially improve model performance>
+compress them to form 3-feature nodes (pixel positions and energies).
+ The positions and energies are further normalized to values in the 
+\begin_inset Formula $(0,1)$
+\end_inset
+
+ interval to finally prepare the training dataset.
 \end_layout
 
 \begin_layout Section
@@ -733,12 +762,73 @@ Results
 \end_layout
 
 \begin_layout Standard
-<WIP: Description of training hyperparameters like optimizer, learning rate
- schedules and regularization terms in loss function.
- Inference speed will be plotted against input (total graph nodes) and batch
- sizes.
- Comparisons of reconstructed image against training image will be plotted
- to illustrate fidelity of the model>
+Pytorch deep learning framework coupled with Pytorch geometric library (which
+ specializes in operations on graphs) were used to implement the GraphVAE
+ model used in this work.
+ The encoder network consists of 3 SAGE convolution layer with 2 MinCut
+ Pool layers sandwiched in between, gradually reducing the dimensionality
+ of the latent space to 20 from the input space dimensionality of 400.
+ The decoder network exactly mirrors this operation with similar graph operation
+s that upscale the dimensions back to 400.
+ Since this is a toy model, fairly modest layer widths of upto 64 were used
+ and it remains to be seen how scaling to bigger neural networks affects
+ the results.
+\end_layout
+
+\begin_layout Subsection
+Cylindrical geometry of image data
+\end_layout
+
+\begin_layout Standard
+Assigning the position features values between 
+\begin_inset Formula $0$
+\end_inset
+
+ and 
+\begin_inset Formula $1$
+\end_inset
+
+ imposes a Cartesian or flat geometry for the detector hit images, while
+ the 
+\begin_inset Formula $i\phi$
+\end_inset
+
+ direction horizontal to the images is circular or periodic which can lead
+ to loss of information at the ends near 
+\begin_inset Formula $\phi=0,2\pi$
+\end_inset
+
+ during training.
+ To take this periodic nature into account, we translate the 
+\begin_inset Formula $x$
+\end_inset
+
+ coordinates of some hits by 
+\begin_inset Formula $\pm1$
+\end_inset
+
+ depending on the position of predicted hit positions
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+A code implementation can be found in the train.py file in this repo: 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+github.com/dinesh110598/Quark_Gluon_Data/main
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Section
