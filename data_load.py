@@ -124,22 +124,19 @@ class Train_Dataset(torch.utils.data.Dataset):
     def close(self):
         self.f.close()
         
-def get_train_dataset(L=50_000):
+def get_train_dataset(L=50_000, jet="quark"):
     """
     Loads dataset to RAM. Slow to initialize.
     """
-    f = h5.File("quark_ecal_graph_normalized.h5")
+    f = h5.File(jet + "_ecal_graph_normalized.h5")
     X, NL, mask = f['X'][:L], f['NL'][:L], f['mask'][:L]
     f.close()
     return torch.utils.data.TensorDataset(torch.from_numpy(X), 
                                           torch.from_numpy(NL), 
                                           torch.from_numpy(mask))
     
-def get_train_dataset2(L=50_000):
-    """
-    Loads dataset to RAM. Slow to initialize.
-    """
-    f = h5.File("gluon_ecal_graph_normalized.h5")
+def get_val_dataset(L=10_000, jet="quark"):
+    f = h5.File(jet + "_val_graph_ecal.h5")
     X, NL, mask = f['X'][:L], f['NL'][:L], f['mask'][:L]
     f.close()
     return torch.utils.data.TensorDataset(torch.from_numpy(X), 

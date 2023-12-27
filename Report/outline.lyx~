@@ -63,6 +63,9 @@
 \justification true
 \use_refstyle 1
 \use_minted 0
+\backgroundcolor #000000
+\fontcolor #ffffff
+\notefontcolor #686868
 \index Index
 \shortcut idx
 \color #008000
@@ -726,10 +729,9 @@ literal "false"
 
  for gluon jet responses.
  Out of roughly 130K images (equally split between quark and gluon jets),
- we train a GraphVAE on 50K of the quark jet ECAL images alone, for simplicity
- as well as benchmarking the model against corresponding images of gluon
- jets- investigating the utility of GraphVAE for detecting anomalies in
- input data.
+ we train a GraphVAE quark jet ECAL images alone, for simplicity as well
+ as benchmarking the model against corresponding images of gluon jets- investiga
+ting the utility of GraphVAE for detecting anomalies in input data.
  To convert the images to 
 \emph on
 graph
@@ -738,12 +740,36 @@ graph
 \begin_inset Formula $10^{-3}$
 \end_inset
 
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+An upper bound of 400 hits was chosen, sorted according to energy in descending
+ order
+\end_layout
+
+\end_inset
+
 compress them to form 3-feature nodes (pixel positions and energies).
+ This considerably reduces the size of the dataset file in the computer's
+ memory- from 
+\begin_inset Formula $\approx600$
+\end_inset
+
+ Mb to 
+\begin_inset Formula $\approx100$
+\end_inset
+
+ Mb, in the HDF5 dataset format.
  The positions and energies are further normalized to values in the 
 \begin_inset Formula $(0,1)$
 \end_inset
 
  interval to finally prepare the training dataset.
+ Training and test datasets consist 50,000 and 10,000 of the graph-formatted
+ ECAL images respectively.
+ We compiled another test dataset of 10,000 gluon images for benchmarking.
 \end_layout
 
 \begin_layout Section
@@ -751,7 +777,506 @@ Results
 \end_layout
 
 \begin_layout Standard
-The encoder network consists of 
+Pytorch deep learning framework coupled with Pytorch geometric library (which
+ specializes in operations on graphs) were used to implement the GraphVAE
+ model used in this work.
+ The encoder network consists of 3 SAGE convolution layer with 2 MinCut
+ Pool layers sandwiched in between, gradually reducing the dimensionality
+ of the latent space to 20 from the input space dimensionality of 400.
+ The decoder network exactly mirrors this operation with similar graph operation
+s that upscale the dimensions back to 400.
+ Degree normalization is applied to the adjacency matrix between every upscaling
+/downscaling operation and masking out padded nodes has been carefully applied
+ to ensure there are no 
+\begin_inset Quotes eld
+\end_inset
+
+leaks
+\begin_inset Quotes erd
+\end_inset
+
+ in the graph operations.
+ Since this is a toy model, fairly modest layer widths of upto 64 were used
+ and it remains to be seen how scaling to bigger neural networks affects
+ the results.
+ 
+\end_layout
+
+\begin_layout Standard
+Mean squared error (MSE) loss between the input and output features (both
+ hits and their energies) were used along with a KL-divergence loss for
+ the reparameterization mean and variance, as well as a regularization term
+ for optimizing cluster assignments while downscaling/upscaling.
+ ADAM optimizer has been used to update weights via gradient descent during
+ training with a learning rate of 
+\begin_inset Formula $10^{-3}$
+\end_inset
+
+.
+ A publicly accessible codebase of our model can be found here: 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+github.com/dinesh110598/Quark_Gluon_Data/main
+\end_layout
+
+\end_inset
+
+ and all data/figures in this work are reproducible.
+\end_layout
+
+\begin_layout Subsection
+Cylindrical geometry of image data
+\end_layout
+
+\begin_layout Standard
+Assigning the position features values between 
+\begin_inset Formula $0$
+\end_inset
+
+ and 
+\begin_inset Formula $1$
+\end_inset
+
+ imposes a 
+\begin_inset Quotes eld
+\end_inset
+
+flat
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\emph on
+Cartesian
+\emph default
+ geometry for the detector hit images, while the 
+\begin_inset Formula $i\phi$
+\end_inset
+
+ direction horizontal to the images is circular or periodic which can lead
+ to loss of information at the ends near 
+\begin_inset Formula $\phi=0,2\pi$
+\end_inset
+
+ during training.
+ To take this periodic nature into account, we translate the 
+\begin_inset Formula $x$
+\end_inset
+
+ coordinates of some hits by 
+\begin_inset Formula $\pm1$
+\end_inset
+
+ depending on the position of predicted hit positions
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+The train.py file in our code repository contains a precise implementation
+\end_layout
+
+\end_inset
+
+.
+ So we train our model using both a naive flat geometry loss and a periodic
+ one to compare their MSE metrics on both training and test datasets in
+ Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:MSE_metrics"
+
+\end_inset
+
+.
+ Training using periodic geometry clearly outperforms the flat geometry
+ counterpart of the Graph VAE model in the given metric across different
+ datasets as well as for both hit positions and the corresponding energies.
+ Figure compares the true and reconstructed 
+\begin_inset Quotes eld
+\end_inset
+
+images
+\begin_inset Quotes erd
+\end_inset
+
+ of randomly chosen samples from each dataset.
+ It's generally hard to visually determine the performance of the flat model
+ against the periodic one from looking through the plots.
+ 
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Tabular
+<lyxtabular version="3" rows="7" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Dataset (model)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Hit MSE
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Energy MSE
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Quark training (flat)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.4043
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0013
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Quark training (periodic)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0917
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0004
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Quark test (flat)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.3786
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0013
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Quark test (periodic)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0864
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0004
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Gluon test (flat)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.4144
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0014
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Gluon test (periodic)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0942
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.0005
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:MSE_metrics"
+
+\end_inset
+
+ This table describes the Mean Square Error (MSE) metric of hit and energy
+ reconstruction by models trained on flat/periodic geometries on different
+ datasets (lower values are better)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Gluon data as anomalies
+\end_layout
+
+\begin_layout Standard
+An earlier work demonstrates classifying images of quark and gluon jets
+ using convolutional neural networks where the ML model trains to discriminate
+ between different labels.
+ In the current work, we attempt to train a variational autoencoder to reconstru
+ct samples of quark jets alone, so it has no prior information about gluon
+ jet samples.
+ Hence, we expect the model to perform worse in terms of various metrics
+ when queried to reconstruct gluon jets, compared to quark jets and thus
+ be treated as anomalies beyond a threshold value of these metrics.
+ Referring to table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:MSE_metrics"
+
+\end_inset
+
+ seems to indicate similar metrics for both flat and periodic trained Graph
+ VAE models for quark and gluon jets.
+ In a closer look, training dataset has worse MSE metric compared to the
+ gluon test dataset, which are in turn marginally higher than the quark
+ test dataset for both hits and energies.
+ Visual comparisons using figure offers no insight either.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename Plots/Flat_quark_train.pdf
+	scale 25
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename Plots/Periodic_quark_train.pdf
+	scale 25
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename Plots/Flat_quark_val.pdf
+	scale 25
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename Plots/periodic_quark_val.pdf
+	scale 25
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename Plots/Flat_gluon_val.pdf
+	scale 25
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename Plots/periodic_gluon_val.pdf
+	scale 25
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Img_reconstructions"
+
+\end_inset
+
+Original and reconstructed samples from different datasets are plotted side-by-s
+ide presented in the same (row wise) order as table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:MSE_metrics"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section

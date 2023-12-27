@@ -4,7 +4,7 @@
 \begin_header
 \save_transient_properties true
 \origin unavailable
-\textclass article
+\textclass report
 \use_default_options true
 \maintain_unincluded_children false
 \language english
@@ -90,16 +90,17 @@
 \begin_body
 
 \begin_layout Title
-Graph Variational neural network for fast end to end detector simulation
+Graph Variational autoencoder for fast end to end detector simulation
 \end_layout
 
 \begin_layout Author
 Dinesh PR
 \end_layout
 
-\begin_layout Standard
-towards partial fulfillment of course requirements for PH 561 (Fall 2023)
- at the University of Alabama
+\begin_layout Abstract
+This work is produced towards partial fulfillment of course requirements
+ for PH 561, Nuclear and particle physics (Fall 2023) at the University
+ of Alabama
 \end_layout
 
 \begin_layout Section
@@ -121,9 +122,10 @@ literal "false"
  While it trains on dataset obtained from existing Monte Carlo-based generation
  and detector simulation models, we aim to accelerate re-sampling the same
  without compromising on the accuracy and fidelity.
- A successful implementation of the model can be used to program customized
- FPGA-based triggers that can avoid pile-up of unnecessary background hits
- during collision experiments at the LHC.
+ Generative and reconstruction capabilities of variational autoencoders
+ means they can train on simulated datasets from known physical processes
+ and detect anomalies due to unknown or new physical processes behind actual
+ detector data.
 \end_layout
 
 \begin_layout Subsection
