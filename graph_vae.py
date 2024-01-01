@@ -88,8 +88,8 @@ class GraphVAE(nn.Module):
         self.latent_dim = latent_dim
         
         self.sage = nn.ModuleList([
-            gnn.DenseSAGEConv(in_channels, 16, normalize=False),
-            gnn.DenseSAGEConv(16, 64, normalize=False),
+            gnn.DenseSAGEConv(in_channels, 32, normalize=False),
+            gnn.DenseSAGEConv(32, 64, normalize=False),
             gnn.DenseSAGEConv(64, 64, normalize=False)
         ])
         # self.lin = nn.ModuleList([
@@ -107,7 +107,7 @@ class GraphVAE(nn.Module):
             nn.BatchNorm1d(max_nodes//20)
         ])
         self.pool = nn.ModuleList([
-            MinCut_Pool(16, max_nodes//4),
+            MinCut_Pool(32, max_nodes//4),
             MinCut_Pool(64, max_nodes//20)
         ])
         
@@ -121,8 +121,8 @@ class GraphVAE(nn.Module):
             nn.Linear(32, 64))
         
         self.revsage = nn.ModuleList([
-            gnn.DenseSAGEConv(16, in_channels, normalize=False),
-            gnn.DenseSAGEConv(64, 16, normalize=False),
+            gnn.DenseSAGEConv(32, in_channels, normalize=False),
+            gnn.DenseSAGEConv(64, 32, normalize=False),
             gnn.DenseSAGEConv(64, 64, normalize=False)
         ])
         # self.rev_lin = nn.ModuleList([
