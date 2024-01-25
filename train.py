@@ -140,13 +140,7 @@ def train_loop(net: GraphVAE, epochs, batch_size=64, lr=1e-3,
         hit_mse_list.append(ep_hit_mse)
     return loss_list, E_mse_list, hit_mse_list
 # %%
-# net = GraphVAE()
-# net.load_state_dict(torch.load("Saves/Checkpoints/ep_15.pth"))
-# dataset = get_train_dataset(400)
-# dataloader = torch.utils.data.DataLoader(dataset, 200, True)
-# for (x,) in dataloader:
-#     img1 = x[:, :, :, 1]
-#     with torch.no_grad():
-#         L, img2, counts = loss_infer(net, x)
-#     break
+net = GraphVAE(400, 3)
+device = torch.device("cuda:0")
+loss2, E_mse2, hit_mse2 = train_loop(net, 1, 250, 5e-4, device, True)
 # %%

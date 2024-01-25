@@ -1,9 +1,18 @@
 #!/bin/bash
 
 #SBATCH --job-name=graphvae_torch
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
+#SBATCH -n 1
+#SBATCH -c 10
+#SBATCH -N 1
+#SBATCH -J graph_vae_torch
+#SBATCH -p gpu
+#SBATCH --qos gpu
+#SBATCH --gres gpu:1
+#SBATCH --mem=50G 
 #SBATCH --output=./Data/log.txt
 
-/home/dpr/miniconda3/envs/torch-geo/bin/python3 hpc_run.py
+cd /home/dpr/Projects/GraphVAE_NPP/Quark_Gluon_data/
+source /share/apps/modulefiles/conda_init.sh
+conda activate torch_gpu
+
+python3 hpc_run.py
