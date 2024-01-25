@@ -95,6 +95,7 @@ def loss_fn(net, X, A, mask, periodic=True):
 
 def train_loop(net: GraphVAE, epochs, batch_size=64, lr=1e-3, 
                 device=torch.device("cpu"), periodic=True):
+    net.train()
     dataset = get_train_dataset()
     data_loader = torch.utils.data.DataLoader(dataset, batch_size, True)
     opt = torch.optim.Adam(net.parameters(), lr)
@@ -138,9 +139,11 @@ def train_loop(net: GraphVAE, epochs, batch_size=64, lr=1e-3,
         loss_list.append(ep_loss)
         E_mse_list.append(ep_E_mse)
         hit_mse_list.append(ep_hit_mse)
+    
+    net.eval()
     return loss_list, E_mse_list, hit_mse_list
 # %%
-net = GraphVAE(400, 3)
-device = torch.device("cuda:0")
-loss2, E_mse2, hit_mse2 = train_loop(net, 1, 250, 5e-4, device, True)
+# net = GraphVAE(400, 3)
+# device = torch.device("cuda:0")
+# loss2, E_mse2, hit_mse2 = train_loop(net, 1, 250, 5e-4, device, True)
 # %%

@@ -18,8 +18,7 @@ else:
     device = torch.device("cpu")
 
 net = GraphVAE()
-net.load_state_dict(torch.load("Saves/ep_25.pth"))
 net = net.to(device)
 
-train_loop(net, 30, 200, 1e-3, device)
-torch.save(net.to("cpu").state_dict(), "Saves/hpc_ep_30.pth")
+loss, E_mse, hit_mse = train_loop(net, 60, 256, 1e-3, device, False)
+torch.save(net.to("cpu").state_dict(), "Saves/hpc_ep_60.pth")
