@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch_geometric import nn as gnn
 
 from graph_vae import GraphVAE
-from train import train_loop, loss_infer
+from train import train_loop
 from data_load import *
 
 if torch.cuda.is_available():
