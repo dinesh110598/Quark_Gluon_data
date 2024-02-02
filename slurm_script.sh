@@ -13,6 +13,6 @@
 
 cd /home/dpr/Projects/GraphVAE_NPP/Quark_Gluon_data/
 source /share/apps/modulefiles/conda_init.sh
-conda activate torch_gpu
+conda activate torch-geo
 
 python3 hpc_run.py
