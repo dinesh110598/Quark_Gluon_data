@@ -17,7 +17,7 @@ if torch.cuda.is_available():
 else:
     device = torch.device("cpu")
 
-net = GraphVAE()
+net = GraphVAE(400, 3)
 net = net.to(device)
 
 loss, E_mse, hit_mse = train_loop(net, 60, 256, 1e-3, device, False)
