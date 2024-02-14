@@ -16,19 +16,22 @@ def graph_list(X: torch.Tensor) -> list:
     graphs = []
     
     for i in range(X.shape[0]):
-        ecal = X[i] #[i, :, :, 1]
+        ecal = X[i, :, :, 1]
         xhit, yhit = torch.nonzero(ecal, as_tuple=True)
-        # pos = torch.stack((xhit.float(), yhit.float()), dim=1)
+        ener = ecal[xhit, yhit]
+        # Positions and energies of hits concatenated
+        ft_E = torch.stack((xhit.float(), 
+                            yhit.float(), ener), dim=1)
         
-        E = ecal[xhit, yhit]
-        # Sort according to energies
-        E, args = torch.sort(E, -1, True)
-        xhit = xhit[args]
-        yhit = yhit[args]
+        hcal = X[i, :, :, 2]
+        xhit, yhit = torch.nonzero(hcal, as_tuple=True)
+        ener = ecal[xhit, yhit]
+        # Positions and energies of hits concatenated
+        ft_H = torch.stack((xhit.float(), 
+                            yhit.float(), ener), dim=1)
         
-        # Node features are positions and energies of the hits
-        node_ft = torch.stack((xhit.float(), 
-                               yhit.float(), E), dim=1)[:400]
+        node_ft = torch.cat((ft_E, ft_H))[:1000]
+        
         # Edges are b/w k-nearest neighbors of every node
         edge_index = gnn.knn_graph(node_ft[:, :2], k=6, loop=False)
         graphs.append(torch_geometric.data.Data(
