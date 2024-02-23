@@ -79,7 +79,7 @@ class MinCut_Pool(nn.Module):
         return (S,) + dense_mincut_pool(X, A, S)
     
 class GraphVAE(nn.Module):
-    def __init__(self, max_nodes=1000, in_channels=4, 
+    def __init__(self, max_nodes=1000, in_channels=6, 
                  hidden_channels=32, latent_dim=32):
         super().__init__()
         assert max_nodes%20 == 0

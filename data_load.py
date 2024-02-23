@@ -16,6 +16,13 @@ def graph_list(X: torch.Tensor) -> list:
     graphs = []
     
     for i in range(X.shape[0]):
+        tracker = X[i, :, :, 0]
+        xhit, yhit = torch.nonzero(tracker, as_tuple=True)
+        ener = tracker[xhit, yhit]
+        ft_T = torch.stack((xhit.float(), yhit.float(), ener),
+                           dim=1)
+
+
         ecal = X[i, :, :, 1]
         xhit, yhit = torch.nonzero(ecal, as_tuple=True)
         ener = ecal[xhit, yhit]
@@ -29,9 +36,13 @@ def graph_list(X: torch.Tensor) -> list:
         # Positions and energies of hits concatenated
         ft_H = torch.stack((xhit.float(), 
                             yhit.float(), ener), dim=1)
-        
-        node_ft = torch.cat((ft_E, ft_H))[:1000]
-        
+        layer = nn.functional.one_hot(
+            torch.cat([torch.full([ft_E.shape[0]], 0),
+                      torch.full([ft_H.shape[0]], 1),
+                      torch.full([ft_T.shape[0]], 2)]), 3
+        )[:1000]
+        node_ft = torch.cat((ft_E, ft_H, ft_T))[:1000]
+        node_ft = torch.cat((node_ft, layer), 1)
         # Edges are b/w k-nearest neighbors of every node
         edge_index = gnn.knn_graph(node_ft[:, :2], k=6, loop=False)
         graphs.append(torch_geometric.data.Data(
@@ -131,7 +142,7 @@ def get_train_dataset(L=50_000, jet="quark"):
     """
     Loads dataset to RAM. Slow to initialize.
     """
-    f = h5.File(jet + "_ecal_graph_normalized.h5")
+    f = h5.File(jet + "_3chan_graph_normalized.h5")
     X, NL, mask = f['X'][:L], f['NL'][:L], f['mask'][:L]
     f.close()
     return torch.utils.data.TensorDataset(torch.from_numpy(X), 
@@ -189,13 +200,13 @@ def preprocess(x, device):
     counts = node_counter(graphs)
     lengs = torch.LongTensor(np.hstack(assigner(counts))).to(device)
 
-    compress = torch_geometric.data.Batch.from_data_list(graphs)
-    G = compress.x.clone() # All nodes of all graphs cat together
-    E = compress.edge_index.clone()
+    G = torch_geometric.data.Batch.from_data_list(graphs)
+    N = G.x.clone() # All nodes of all graphs cat together
+    E = G.edge_index.clone()
     
-    X, mask = to_dense_batch(G, lengs, fill_value=0, max_num_nodes=400)
-    # X.shape = (batch, 400, 3)
-    A = to_dense_adj(E, lengs, max_num_nodes=400) # (batch, 400, 400)
+    X, mask = to_dense_batch(N, lengs, fill_value=0, max_num_nodes=1000)
+    # X.shape = (batch, 1000, 6)
+    A = to_dense_adj(E, lengs, max_num_nodes=1000) # (batch, 1000, 1000)
     
     return X, A, mask, counts
 # %%

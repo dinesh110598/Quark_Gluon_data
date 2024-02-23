@@ -70,8 +70,9 @@ def train_loop(net: GraphVAE, epochs, batch_size=64, lr=1e-3,
             count += 1
             
             opt.step()
-            
-        torch.save(net.to("cpu").state_dict(), 
+        
+        if ep%10 == -1:
+            torch.save(net.to("cpu").state_dict(), 
                    "Saves/Checkpoints/ep_{}.pth".format(ep+1))
         
         ep_loss /= count
