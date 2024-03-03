@@ -6,4 +6,8 @@ which basically means the weights on the normalized adjacency matrix are matrix-
 - MinCutPool
     - It uses a weight matrix $S$ which scales down the node dimension of the layer input
     - $S$ is obtained by a MLP on the layer input X, which is pretty weird for a pooling operation
+
+## Assumptions of the model
+- Is constructing A using KNN good enough? Try more neighbours?
+- 
     
