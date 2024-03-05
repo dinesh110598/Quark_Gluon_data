@@ -32,8 +32,8 @@ def loss_fn(net, X, A, mask, periodic=True):
     mse_hit = mse_xhit + mse_yhit
     
     mse_ener = torch.nn.MSELoss()(X[:, :, 2], Y[:, :, 2])
-    # mse_chan = torch.nn.MSELoss()(X[:, :, 3], Y[:, :, 3])
-    mse = mse_hit + mse_ener # + mse_chan
+    mse_chan = torch.nn.MSELoss()(X[:, :, 3:], Y[:, :, 3:])
+    mse = mse_hit + mse_ener + mse_chan
     KL_div = -0.5*torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
     graph_reg = L1 + L2
     
