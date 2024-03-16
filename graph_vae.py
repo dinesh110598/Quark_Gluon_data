@@ -134,9 +134,9 @@ class GraphVAE(nn.Module):
         self.latent_dim = latent_dim
 
         self.forward_blocks = nn.ModuleList([
-            ForwardSAGEBlock(in_channels, hidden),
-            ForwardSAGEBlock(hidden, 2*hidden),
-            ForwardSAGEBlock(2*hidden, 2*hidden)
+            ForwardSAGEBlock(in_channels, hidden, 0.3),
+            ForwardSAGEBlock(hidden, 2*hidden, 0.3),
+            ForwardSAGEBlock(2*hidden, 2*hidden, 0.3)
         ])
         
         self.pool = nn.ModuleList([
@@ -154,9 +154,9 @@ class GraphVAE(nn.Module):
             nn.Linear(hidden, 2*hidden))
         
         self.reverse_blocks = nn.ModuleList([
-            ReverseSAGEBlock(2*hidden, 2*hidden),
-            ReverseSAGEBlock(2*hidden, hidden),
-            ReverseSAGEBlock(hidden, in_channels)
+            ReverseSAGEBlock(2*hidden, 2*hidden, 0.3),
+            ReverseSAGEBlock(2*hidden, hidden, 0.3),
+            ReverseSAGEBlock(hidden, in_channels, 0.3)
         ])
         
     def upsample(self, X, A, S):
