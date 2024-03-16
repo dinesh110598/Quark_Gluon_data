@@ -77,7 +77,7 @@ class MinCut_Pool(nn.Module):
         return (S,) + dense_mincut_pool(X, A, S)
     
 class ForwardSAGEBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, drop=0.3):
+    def __init__(self, in_channels, out_channels, num_ft, drop=0.3):
         super().__init__()
 
         self.inp_c = in_channels
@@ -85,10 +85,11 @@ class ForwardSAGEBlock(nn.Module):
         
         self.sage1 = gnn.DenseSAGEConv(in_channels, out_channels)
         self.lin = nn.Linear(out_channels, out_channels)
-        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.bn1 = nn.BatchNorm1d(num_ft)
         self.drop = nn.Dropout(drop)
         self.sage2 = gnn.DenseSAGEConv(out_channels, out_channels)
-        self.bn2 = nn.BatchNorm1d(out_channels)
+        self.bn2 = nn.BatchNorm1d(num_ft)
+        self.res_sage = gnn.DenseSAGEConv(in_channels, out_channels)
 
     def forward(self, X, A, mask=None):
         X2 = F.relu(self.sage1(X, A, mask))
@@ -98,31 +99,33 @@ class ForwardSAGEBlock(nn.Module):
         X2 = F.relu(self.sage2(X2, A))
         X2 = self.bn2(X2)
 
-        return X2 + X
+        return X2 + self.res_sage(X, A)
     
 class ReverseSAGEBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, drop):
+    def __init__(self, in_channels, out_channels, num_ft, drop=0.3):
         super().__init__()
 
         self.inp_c = in_channels
         self.out_c = out_channels
 
         self.sage2 = gnn.DenseSAGEConv(in_channels, in_channels)
-        self.bn2 = nn.BatchNorm1d(in_channels)
+        self.bn2 = nn.BatchNorm1d(num_ft)
         self.drop = nn.Dropout(drop)
         self.lin = nn.Linear(in_channels, in_channels)
-        self.bn1 = nn.BatchNorm1d(in_channels)
+        self.bn1 = nn.BatchNorm1d(num_ft)
         self.sage1 = gnn.DenseSAGEConv(in_channels, out_channels)
+
+        self.res_sage = gnn.DenseSAGEConv(in_channels, out_channels)
 
     def forward(self, X, A):
         X2 = F.relu(self.sage2(X, A))
         X2 = self.bn2(X2)
         X2 = self.drop(X2)
         X2 = self.lin(X2)
-        X2 = F.relu(self.sage1(X, A))
+        X2 = F.relu(self.sage1(X2, A))
         X2 = self.bn1(X2)
 
-        return X2 + X
+        return X2 + self.res_sage(X, A)
     
 class GraphVAE(nn.Module):
     def __init__(self, max_nodes=1000, in_channels=6, 
@@ -134,9 +137,9 @@ class GraphVAE(nn.Module):
         self.latent_dim = latent_dim
 
         self.forward_blocks = nn.ModuleList([
-            ForwardSAGEBlock(in_channels, hidden, 0.3),
-            ForwardSAGEBlock(hidden, 2*hidden, 0.3),
-            ForwardSAGEBlock(2*hidden, 2*hidden, 0.3)
+            ForwardSAGEBlock(in_channels, hidden, 1000, 0.3),
+            ForwardSAGEBlock(hidden, 2*hidden, 250, 0.3),
+            ForwardSAGEBlock(2*hidden, 2*hidden, 50, 0.3)
         ])
         
         self.pool = nn.ModuleList([
@@ -154,9 +157,9 @@ class GraphVAE(nn.Module):
             nn.Linear(hidden, 2*hidden))
         
         self.reverse_blocks = nn.ModuleList([
-            ReverseSAGEBlock(2*hidden, 2*hidden, 0.3),
-            ReverseSAGEBlock(2*hidden, hidden, 0.3),
-            ReverseSAGEBlock(hidden, in_channels, 0.3)
+            ReverseSAGEBlock(hidden, in_channels, 1000, 0.3),
+            ReverseSAGEBlock(2*hidden, hidden, 250, 0.3),
+            ReverseSAGEBlock(2*hidden, 2*hidden, 50, 0.3)
         ])
         
     def upsample(self, X, A, S):
@@ -183,10 +186,9 @@ class GraphVAE(nn.Module):
                 pool_S, mincut_loss, ortho_loss)
     
     def decode(self, Z, A, pool_S):
-        Z = self.reverse_blocks[i](Z, A)
-        
+        Z = F.leaky_relu(self.tr_rev(Z))
         for i in reversed(range(3)):
-            Z = F.relu(self.revsage[i](Z, A))
+            Z = self.reverse_blocks[i](Z, A)
             if i>0:
                 # Need to check if upsample really works
                 Z, A = self.upsample(Z, A, pool_S[i-1])

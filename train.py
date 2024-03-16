@@ -92,7 +92,7 @@ def train_loop(net: GraphVAE, epochs, batch_size=64, lr=1e-3,
     net.eval()
     return loss_list, E_mse_list, hit_mse_list
 # %%
-# net = GraphVAE(400, 3)
+# net = GraphVAE()
 # device = torch.device("cuda:0")
-# loss2, E_mse2, hit_mse2 = train_loop(net, 1, 250, 5e-4, device, True)
+# loss2, E_mse2, hit_mse2 = train_loop(net, 1, 64, 1e-3, device, True)
 # %%
