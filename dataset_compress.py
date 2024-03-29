@@ -15,7 +15,7 @@ min_E = 1e-3
 max_E = 1e-2
 
 with h5.File("quark-gluon_data-set_n139306.hdf5") as f:
-    with h5.File("quark-3chan-graph.h5", 'w') as g:
+    with h5.File("gluon-3chan-graph.h5", 'w') as g:
         X_dset = g.create_dataset('X', shape=(0, 1000, 6), dtype=np.float32,
                                   maxshape=(None, 1000, 6))
         NL_dset = g.create_dataset('NL', shape=(0, 1000, 6), dtype=np.float32,
@@ -28,7 +28,7 @@ with h5.File("quark-gluon_data-set_n139306.hdf5") as f:
         for i in range(100):
             X, y = f['X_jets'][i*w:(i+1)*w], f['y'][i*w:(i+1)*w]
             X, y = torch.from_numpy(X), torch.from_numpy(y)
-            (ind_0,) = torch.nonzero(y==0, as_tuple=True)
+            (ind_0,) = torch.nonzero(y==1, as_tuple=True)
             X = X[ind_0]
             X[X < min_E] = 0
             X[X > max_E] = 0
